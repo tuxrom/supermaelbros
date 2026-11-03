@@ -1,0 +1,1488 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Brindille et les Quatre Royaumes</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0d0a14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{--bg:#0d0a14;--ui:#f4ead2;--accent:#ffcf4a;--pad:min(42vh,176px);--btn:min(23vh,92px);color-scheme:dark}
+html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+body{position:fixed;inset:0;color:var(--ui);font:14px/1.3 system-ui,sans-serif}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#game{display:block;background:#000;image-rendering:crisp-edges;image-rendering:pixelated;outline:none}
+#touch{position:fixed;inset:0;pointer-events:none;display:none;z-index:2}
+body.touch #touch{display:block}
+#dpad{position:absolute;left:calc(max(12px,env(safe-area-inset-left,0px)) + 8px);bottom:calc(env(safe-area-inset-bottom,0px) + 14px);width:var(--pad);height:var(--pad)}
+.arm{position:absolute;background:rgba(244,234,210,.14);border:2px solid rgba(244,234,210,.32);border-radius:12px;box-sizing:border-box}
+.arm::after{content:"";position:absolute;left:50%;top:50%;width:0;height:0;border:8px solid transparent;transform:translate(-50%,-50%)}
+.arm.up{left:33%;top:0;width:34%;height:38%}.arm.up::after{border-bottom-color:rgba(255,255,255,.7);margin-top:-4px}
+.arm.down{left:33%;bottom:0;width:34%;height:38%}.arm.down::after{border-top-color:rgba(255,255,255,.7);margin-top:4px}
+.arm.left{left:0;top:33%;width:38%;height:34%}.arm.left::after{border-right-color:rgba(255,255,255,.7);margin-left:-4px}
+.arm.right{right:0;top:33%;width:38%;height:34%}.arm.right::after{border-left-color:rgba(255,255,255,.7);margin-left:4px}
+.arm.on,.btn.on{background:rgba(255,207,74,.5);border-color:rgba(255,230,160,.8)}
+.btn{position:absolute;width:var(--btn);height:var(--btn);border-radius:50%;box-sizing:border-box;background:rgba(244,234,210,.14);border:2px solid rgba(244,234,210,.38);display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.88);font:700 calc(var(--btn)*.3)/1 system-ui,sans-serif}
+.btn i{font-style:normal;font-weight:600;font-size:calc(var(--btn)*.12);letter-spacing:.1em;opacity:.75;margin-top:3px}
+#bA{right:calc(max(12px,env(safe-area-inset-right,0px)) + 8px);bottom:calc(env(safe-area-inset-bottom,0px) + var(--btn)*.85)}
+#bB{right:calc(max(12px,env(safe-area-inset-right,0px)) + var(--btn)*1.1);bottom:calc(env(safe-area-inset-bottom,0px) + 10px)}
+.sbtn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);width:44px;height:34px;border-radius:9px;box-sizing:border-box;background:rgba(13,10,20,.45);border:2px solid rgba(244,234,210,.35);display:flex;align-items:center;justify-content:center}
+#bP{right:calc(max(10px,env(safe-area-inset-right,0px)))}
+#bF{right:calc(max(10px,env(safe-area-inset-right,0px)) + 52px)}
+.sbtn svg{width:20px;height:20px;fill:none;stroke:rgba(255,255,255,.85);stroke-width:2.5}
+#rotate{display:none;position:fixed;inset:0;z-index:5;background:rgba(13,10,20,.92);align-items:center;justify-content:center;text-align:center;padding:24px}
+#rotate div{max-width:260px;font:600 16px/1.4 system-ui,sans-serif;color:var(--ui)}
+#rotate svg{display:block;margin:0 auto 14px;width:64px;height:64px;fill:none;stroke:var(--accent);stroke-width:3}
+#rotate small{display:block;margin-top:10px;font-weight:400;opacity:.7}
+@media (orientation:portrait) and (pointer:coarse){body:not(.norotate) #rotate{display:flex}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="game" width="384" height="216" tabindex="0" aria-label="Brindille et les Quatre Royaumes, jeu de plateforme"></canvas></div>
+<div id="touch" aria-hidden="true">
+  <div id="dpad"><span class="arm up"></span><span class="arm down"></span><span class="arm left"></span><span class="arm right"></span></div>
+  <div id="bB" class="btn"><b>B</b><i>COURSE</i></div>
+  <div id="bA" class="btn"><b>A</b><i>SAUT</i></div>
+  <div id="bF" class="sbtn"><svg viewBox="0 0 20 20"><path d="M2 7V2h5M13 2h5v5M18 13v5h-5M7 18H2v-5"/></svg></div>
+  <div id="bP" class="sbtn"><svg viewBox="0 0 20 20"><path d="M7 3v14M13 3v14"/></svg></div>
+</div>
+<div id="rotate"><div><svg viewBox="0 0 64 64"><rect x="18" y="6" width="28" height="52" rx="5"/><path d="M8 40a24 24 0 0 0 20 18M56 24A24 24 0 0 0 36 6"/></svg>Tourne ton appareil en mode paysage pour jouer.<small>Touche l'écran pour continuer quand même.</small></div></div>
+<script>
+(function(){
+'use strict';
+// =====================================================================
+//  BRINDILLE ET LES QUATRE ROYAUMES
+//  Jeu de plateforme original. Tout (graphismes, sons, niveaux) est
+//  généré par ce fichier, sans aucune ressource externe.
+// =====================================================================
+const VW=384,VH=216,TS=16,STEP=1000/60;
+const cvs=document.getElementById('game');
+const ctx=cvs.getContext('2d');
+ctx.imageSmoothingEnabled=false;
+
+function resize(){
+  const w=window.innerWidth,h=window.innerHeight;
+  let s=Math.min(w/VW,h/VH);
+  const si=Math.floor(s);
+  if(si>=1&&si/s>0.9)s=si;
+  cvs.style.width=Math.round(VW*s)+'px';
+  cvs.style.height=Math.round(VH*s)+'px';
+}
+window.addEventListener('resize',resize);
+window.addEventListener('orientationchange',()=>setTimeout(resize,250));
+resize();
+
+// ---------- utilitaires ----------
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function hash2(x,y){let h=(x*374761393+y*668265263)|0;h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296;}
+function hexRgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function mix(a,b,t){const A=hexRgb(a),B=hexRgb(b);return'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')+')';}
+function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.imageSmoothingEnabled=false;return[c,g];}
+function R(g,c,x,y,w,h){g.fillStyle=c;g.fillRect(x,y,w===undefined?1:w,h===undefined?1:h);}
+function disc(g,c,cx,cy,rx,ry){if(ry===undefined)ry=rx;g.fillStyle=c;for(let y=Math.floor(cy-ry);y<=Math.ceil(cy+ry);y++)for(let x=Math.floor(cx-rx);x<=Math.ceil(cx+rx);x++){const dx=(x+.5-cx)/rx,dy=(y+.5-cy)/ry;if(dx*dx+dy*dy<=1)g.fillRect(x,y,1,1);}}
+function fromMap(rows,pal){const w=Math.max(...rows.map(r=>r.length)),h=rows.length;const[c,g]=mk(w,h);rows.forEach((r,y)=>{for(let x=0;x<r.length;x++){const col=pal[r[x]];if(col){g.fillStyle=col;g.fillRect(x,y,1,1);}}});return c;}
+function flip(c){const[d,g]=mk(c.width,c.height);g.translate(c.width,0);g.scale(-1,1);g.drawImage(c,0,0);return d;}
+function tint(c,col){const[d,g]=mk(c.width,c.height);g.drawImage(c,0,0);g.globalCompositeOperation='source-in';g.fillStyle=col;g.fillRect(0,0,c.width,c.height);return d;}
+const pairR=c=>[c,flip(c)];   // image de base tournée vers la droite
+const pairL=c=>[flip(c),c];   // image de base tournée vers la gauche
+const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+const pad=(n,l)=>String(Math.max(0,n|0)).padStart(l,'0');
+const lvlName=i=>((i/3|0)+1)+'-'+(i%3+1);
+
+// =====================================================================
+//  POLICE PIXEL 5x7 (avec accents)
+// =====================================================================
+const FONT_SRC={
+A:'01110 10001 10001 11111 10001 10001 10001',B:'11110 10001 10001 11110 10001 10001 11110',
+C:'01110 10001 10000 10000 10000 10001 01110',D:'11110 10001 10001 10001 10001 10001 11110',
+E:'11111 10000 10000 11110 10000 10000 11111',F:'11111 10000 10000 11110 10000 10000 10000',
+G:'01110 10001 10000 10111 10001 10001 01111',H:'10001 10001 10001 11111 10001 10001 10001',
+I:'01110 00100 00100 00100 00100 00100 01110',J:'00111 00010 00010 00010 00010 10010 01100',
+K:'10001 10010 10100 11000 10100 10010 10001',L:'10000 10000 10000 10000 10000 10000 11111',
+M:'10001 11011 10101 10101 10001 10001 10001',N:'10001 10001 11001 10101 10011 10001 10001',
+O:'01110 10001 10001 10001 10001 10001 01110',P:'11110 10001 10001 11110 10000 10000 10000',
+Q:'01110 10001 10001 10001 10101 10010 01101',R:'11110 10001 10001 11110 10100 10010 10001',
+S:'01111 10000 10000 01110 00001 00001 11110',T:'11111 00100 00100 00100 00100 00100 00100',
+U:'10001 10001 10001 10001 10001 10001 01110',V:'10001 10001 10001 10001 10001 01010 00100',
+W:'10001 10001 10001 10101 10101 10101 01010',X:'10001 10001 01010 00100 01010 10001 10001',
+Y:'10001 10001 01010 00100 00100 00100 00100',Z:'11111 00001 00010 00100 01000 10000 11111',
+0:'01110 10001 10011 10101 11001 10001 01110',1:'00100 01100 00100 00100 00100 00100 01110',
+2:'01110 10001 00001 00010 00100 01000 11111',3:'11111 00010 00100 00010 00001 10001 01110',
+4:'00010 00110 01010 10010 11111 00010 00010',5:'11111 10000 11110 00001 00001 10001 01110',
+6:'00110 01000 10000 11110 10001 10001 01110',7:'11111 00001 00010 00100 01000 01000 01000',
+8:'01110 10001 10001 01110 10001 10001 01110',9:'01110 10001 10001 01111 00001 00010 01100',
+'.':'00000 00000 00000 00000 00000 01100 01100',',':'00000 00000 00000 00000 01100 00100 01000',
+':':'00000 01100 01100 00000 01100 01100 00000','!':'00100 00100 00100 00100 00100 00000 00100',
+'?':'01110 10001 00001 00010 00100 00000 00100','-':'00000 00000 00000 11111 00000 00000 00000',
+"'":'00100 00100 01000 00000 00000 00000 00000','/':'00001 00010 00010 00100 01000 01000 10000',
+'(':'00010 00100 01000 01000 01000 00100 00010',')':'01000 00100 00010 00010 00010 00100 01000',
+'+':'00000 00100 00100 11111 00100 00100 00000','>':'01000 00100 00010 00001 00010 00100 01000',
+'<':'00010 00100 01000 10000 01000 00100 00010','♥':'00000 01010 11111 11111 01110 00100 00000',
+'·':'00000 00000 00000 01100 01100 00000 00000','=':'00000 00000 11111 00000 11111 00000 00000',
+'%':'11001 11010 00010 00100 01000 01011 10011',' ':'00000 00000 00000 00000 00000 00000 00000'
+};
+const ACC={'É':['E','a'],'È':['E','g'],'Ê':['E','c'],'Ë':['E','d'],'À':['A','g'],'Â':['A','c'],'Ç':['C','s'],'Ô':['O','c'],'Î':['I','c'],'Ï':['I','d'],'Ù':['U','g'],'Û':['U','c']};
+const ACC_PX={a:[[2,1],[3,0]],g:[[1,0],[2,1]],c:[[1,1],[2,0],[3,1]],d:[[1,1],[3,1]],s:[[2,10],[1,11]]};
+const GLYPHS={};
+for(const ch in FONT_SRC){const s=FONT_SRC[ch].replace(/ /g,'');const px=[];for(let i=0;i<35;i++)if(s[i]==='1')px.push([i%5,3+Math.floor(i/5)]);GLYPHS[ch]=px;}
+for(const ch in ACC){const[b,a]=ACC[ch];GLYPHS[ch]=GLYPHS[b].concat(ACC_PX[a]);}
+const CHARS=Object.keys(GLYPHS),CIDX={};CHARS.forEach((c,i)=>CIDX[c]=i);
+const fontCache={};
+function fontAtlas(col){if(fontCache[col])return fontCache[col];const[c,g]=mk(CHARS.length*6,12);g.fillStyle=col;CHARS.forEach((ch,i)=>GLYPHS[ch].forEach(([x,y])=>g.fillRect(i*6+x,y,1,1)));return fontCache[col]=c;}
+function drawStr(str,x,y,col,s){const at=fontAtlas(col);let cx=x;for(const ch of str){const i=CIDX[ch];if(i!==undefined)ctx.drawImage(at,i*6,0,6,12,cx,y-3*s,6*s,12*s);cx+=6*s;}}
+function text(str,x,y,col,s,shadow){str=String(str).toUpperCase();s=s||1;x=Math.round(x);y=Math.round(y);if(shadow!==false)drawStr(str,x+s,y+s,shadow||'#140c1c',s);drawStr(str,x,y,col||'#fff',s);}
+function textW(str,s){return String(str).length*6*(s||1)-(s||1);}
+function ctext(str,y,col,s,shadow){text(str,(VW-textW(str,s))/2,y,col,s,shadow);}
+function outlined(str,x,y,col,s,oc){str=String(str).toUpperCase();for(const[dx,dy]of[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,1],[-1,1],[1,-1]])drawStr(str,x+dx*s,y+dy*s,oc,s);drawStr(str,x+s,y+s*2,oc,s);drawStr(str,x,y,col,s);}
+
+// =====================================================================
+//  SPRITES (pixel art dessiné par code)
+// =====================================================================
+const HS_TOP=[
+"....gg....gg....",
+"...gGGg..gGGg...",
+"....gGGggGGg....",
+"......kGGk......",
+".....kkkkkk.....",
+"...kkbbbbbbkk...",
+"..kbbbbbbbbbbk..",
+"..kbbbbbwwbwwk..",
+"..kbbbbbwebwek..",
+"..kbbbbbwebwek..",
+"..kdbbbbbbbbdk..",
+"..kRrrrrrrrrRk..",
+"rRkdddbbbbdddk..",
+"...kddddddddk..."];
+const HS_DEAD=HS_TOP.slice();HS_DEAD[7]="..kbbbbkbkbkbk..";HS_DEAD[8]="..kbbbbbkbbkbk..";HS_DEAD[9]="..kbbbbkbkbkbk..";
+const HS_LEGS={
+idle:["....kffk.kffk...","...kkkk..kkkk..."],
+run1:["...kffk...kffk..","..kkkk.....kkkk."],
+run2:[".....kfffk......",".....kkkkk......"],
+jump:["..kffk....kffk..","..kk........kk.."]};
+const HB_TOP=[
+"......pPp.......",
+".....pPyPp......",
+"......pPp.......",
+"...gg..G..gg....",
+"..gGGg.G.gGGg...",
+"...gGGgGgGGg....",
+".......G........",
+".....kkkkkk.....",
+"...kkbbbbbbkk...",
+"..kbbbbbbbbbbk..",
+"..kbbbbbwwbwwk..",
+"..kbbbbbwebwek..",
+"..kbbbbbwebwek..",
+"..kdbbbbbbbbdk..",
+"..kdbbbbbbbbdk..",
+"..kRrrrrrrrrRk..",
+"rRkRrdbbbbbddk..",
+"r.kddbbbbbbddk..",
+"..kdddbbbbdddk..",
+"...kddddddddk..."];
+const HB_LEGS={
+idle:["....kdk..kdk....","....kfk..kfk....","....kffk.kffk...","...kkkk..kkkk..."],
+run1:["...kdk....kdk...","..kfk......kfk..","..kffk.....kffk.","..kkkk.....kkkk."],
+run2:[".....kdkkdk.....",".....kfkkfk.....",".....kffffk.....",".....kkkkkk....."],
+jump:["...kdk...kdk....","..kffk...kffk...","..kkk.....kkk...","................"]};
+const WALK_TOP=[
+"................",
+"......m..m......",
+"....m.mmmm.m....",
+"...mmmmmmmmmm...",
+"..mmMmmmmmmmMm..",
+"..mmwwwmmwwwmm..",
+".mmmwkemmwkemmm.",
+".mmmweemmweemmm.",
+".mMmmmmmmmmmmMm.",
+".mMmmkkkkkkmmMm.",
+"..mMmmkddkmmMm..",
+"..mmMMmmmmMMmm..",
+"...mmmmmmmmmm...",
+"....mMmmmmMm...."];
+const WALK_SQ=["................","................","................","................","................","................","................","................","................","................",
+"..m.mmmmmmmm.m..",".mmmwkemmwkemmm.",".mMmmkkkkkkmmMm.","..mmMMmmmmMMmm..","..ffff....ffff..","................"];
+const FLY_A=[
+"......a..a......",
+".......aa.......",
+"WW....kbbk....WW",
+"WwW..kbbbbk..WwW",
+"WwwW.kebbek.WwwW",
+"WwwwWkbbbbkWwwwW",
+".WwwwWkbbkWwwwW.",
+"..WwwwkBBkwwwW..",
+"...WWWkbbkWWW...",
+"......kBBk......",
+"......kbbk......",
+".......kk......."];
+const FLY_B=[
+"......a..a......",
+".......aa.......",
+"......kbbk......",
+".....kbbbbk.....",
+".....kebbek.....",
+"..WWWkbbbbkWWW..",
+".WwwwWkbbkWwwwW.",
+"WwwwwwkBBkwwwwwW",
+"WwwwwWkbbkWwwwwW",
+"WwwwW.kBBk.WwwwW",
+".WWW..kbbk..WWW.",
+".......kk......."];
+const JELLY=[
+"................","................","................","................",
+".....kkkkkk.....",
+"...kkjjjjjjkk...",
+"..kjhhjjjjjjjk..",
+"..kjhwwjjwwjjk..",
+".kjjjwejjwejjjk.",
+".kjjjwejjwejjjk.",
+".kjjjjjjjjjjjjk.",
+".kjjjmmmmmmjjjk.",
+".kJjjjmmmmjjjJk.",
+".kJJjjjjjjjjJJk.",
+"..kJJJJJJJJJJk..",
+"...kkkkkkkkkk..."];
+const SHOOT=[
+"................",
+"...kkkkkkkkk....",
+"..kshhssssssk...",
+"..kshsssssssSk..",
+"..ksskkksskkSk..",
+"..kssyyssyysSk..",
+"..kssssssssssk..",
+"..kSsssssskkkkkk",
+"..kSssssskoooook",
+"..kSssssskoooook",
+"..kSsssssskkkkkk",
+"..kSSssssssSSk..",
+"..kSSSSSSSSSSk..",
+".kkkkkkkkkkkkkk.",
+".kgGgGgGgGgGgGk.",
+".kkkkkkkkkkkkkk."];
+const SPIKY=[
+"................",
+"....n..n..n.....",
+"...nn.nn.nn.n...",
+"..nNnnNnnNnnNn..",
+"..nNNNNNNNNNNn..",
+".nNNNNNNNNNNNNn.",
+"nbbbNNNNNNNNNNNn",
+"bbwebNNNNNNNNNNn",
+"bbeebNNNNNNNNNn.",
+"bbbbbbNNNNNNNNNn",
+"kbbbbbNNNNNNNNn.",
+".bbbbNNNNNNNNNNn",
+"..bNNNNNNNNNNNn.",
+"...nNNNNNNNNNn.."];
+
+const SPR={};
+let COIN=[],SEED=null;
+function buildSprites(){
+  const HP={k:'#2a1a12',b:'#f6d595',d:'#d49a58',g:'#86e264',G:'#2f9a44',r:'#ee4a3c',R:'#a82a35',w:'#ffffff',e:'#1e1228',f:'#6a4224',p:'#ff9cc8',P:'#e0507f',y:'#ffe066'};
+  SPR.hs={};for(const k in HS_LEGS)SPR.hs[k]=pairR(fromMap(HS_TOP.concat(HS_LEGS[k]),HP));
+  SPR.hs.dead=pairR(fromMap(HS_DEAD.concat(HS_LEGS.jump),HP));
+  SPR.hb={};for(const k in HB_LEGS)SPR.hb[k]=pairR(fromMap(HB_TOP.concat(HB_LEGS[k]),HP));
+  const walkSet=pal=>({a:pairR(fromMap(WALK_TOP.concat(["...ffff..ffff...","..fffff..fffff.."]),pal)),
+    b:pairR(fromMap(WALK_TOP.concat(["....ffff.ffff...","...fffff.fffff.."]),pal)),
+    sq:pairR(fromMap(WALK_SQ,pal))});
+  SPR.walk=walkSet({m:'#9a5ad8',M:'#5e2f98',w:'#fff',e:'#1a0f24',k:'#2a1236',f:'#f0a040',d:'#fff'});
+  SPR.walkE=walkSet({m:'#e2683a',M:'#9a3420',w:'#fff',e:'#1a0f24',k:'#3a1408',f:'#ffd060',d:'#fff'});
+  const FP={a:'#2a1a30',k:'#3a2440',b:'#ffe6a0',B:'#d09a40',e:'#1a1020',W:'#3f6cc4',w:'#bfe4ff'};
+  SPR.fly={a:pairR(fromMap(FLY_A,FP)),b:pairR(fromMap(FLY_B,FP))};
+  SPR.jelly=pairR(fromMap(JELLY,{k:'#0e3a2c',j:'#3fd29e',J:'#1f8a66',h:'#c4ffe6',w:'#fff',e:'#0b1a14',m:'#0e2a20'}));
+  const SP={k:'#1c1a24',s:'#a4a2b4',S:'#62607a',h:'#e0def0',y:'#ffcf3a',o:'#2a0a14',g:'#5bbf5a',G:'#2f7a3a'};
+  SPR.shoot=pairR(fromMap(SHOOT,SP));
+  SPR.shootHot=pairR(fromMap(SHOOT,Object.assign({},SP,{y:'#ff4a3a',o:'#ff8a2a'})));
+  const KP={n:'#ece8f6',N:'#6a6488',b:'#f2b27a',w:'#fff',e:'#1a1020',k:'#7a3a2a',f:'#3a2a3a'};
+  SPR.spiky={a:pairL(fromMap(SPIKY.concat(["...ff.....ff....","..fff....fff...."]),KP)),b:pairL(fromMap(SPIKY.concat(["....ff...ff.....","...fff..fff....."]),KP))};
+  // boss Ferroc
+  SPR.boss=[0,1].map(f=>[false,true].map(angry=>{const c=drawBoss(f,angry);return{n:c,w:tint(c,'#ffffff')};}));
+  // pièces
+  COIN=[5,3.5,1.5,3.5].map((rx,i)=>{const[c,g]=mk(16,16);disc(g,'#7a4a08',8,8,rx+1,7);disc(g,'#ffcc33',8,8,rx,6);if(rx>2){disc(g,'#fff1a0',7,7,Math.max(1,rx*.45),3);R(g,'#c88a10',8,5,1,6);R(g,'#c88a10',9,5,1,1);}else R(g,'#fff1a0',8,4,1,6);return c;});
+  // graine solaire (bonus)
+  {const[c,g]=mk(16,16);disc(g,'#7a3a08',8,9.5,6.5,6);disc(g,'#ff9a2a',8,9.5,5.5,5);disc(g,'#ffd060',7,8.5,3,3);R(g,'#fff7c0',6,7,2,2);R(g,'#2f9a44',8,1,1,4);R(g,'#86e264',9,1,3,2);R(g,'#86e264',5,2,3,1);R(g,'#2a1a12',6,10,1,2);R(g,'#2a1a12',10,10,1,2);SEED=c;}
+}
+function drawBoss(f,angry){
+  const[c,g]=mk(32,32);const K='#24140c',B='#b8743a',D='#6a3a1c',Lt='#f0b070',E=angry?'#ff3a2a':'#ffd23a',H='#ece2d0';
+  // cornes
+  R(g,K,4,1,4,7);R(g,H,5,2,2,5);R(g,K,24,1,4,7);R(g,H,25,2,2,5);
+  // corps
+  R(g,K,4,6,24,21);R(g,K,5,5,22,1);R(g,B,5,7,22,19);R(g,B,6,6,20,1);R(g,Lt,6,7,20,2);R(g,D,5,22,22,4);R(g,D,5,15,22,1);
+  for(const[x,y]of[[7,10],[24,10],[7,19],[24,19]]){R(g,Lt,x,y);R(g,D,x+1,y+1);}
+  // yeux
+  R(g,K,9,10,6,4);R(g,K,17,10,6,4);R(g,E,10,11,4,2);R(g,E,18,11,4,2);if(angry){R(g,K,9,9,3,1);R(g,K,20,9,3,1);}
+  // bouche grille
+  R(g,K,11,17,10,5);for(let x=12;x<20;x+=2)R(g,D,x,18,1,3);R(g,E,12,20,8,1);
+  // bras
+  const ay=f?14:13;R(g,K,0,ay,5,11);R(g,B,1,ay+1,3,6);R(g,D,1,ay+7,3,3);R(g,K,27,ay,5,11);R(g,B,28,ay+1,3,6);R(g,D,28,ay+7,3,3);
+  // jambes
+  const l1=f?1:0,l2=f?0:1;R(g,K,7,26-l1,7,6+l1);R(g,D,8,27-l1,5,4+l1);R(g,K,18,26-l2,7,6+l2);R(g,D,19,27-l2,5,4+l2);
+  return c;
+}
+
+// =====================================================================
+//  THÈMES, TUILES ET DÉCORS
+// =====================================================================
+const THEMES=[
+{key:'plaine',name:"PRAIRIES DE L'AUBE",style:'grass',music:'plaine',ui:'#ffcf4a',
+ dirt:'#9a5f34',dirtD:'#6b3c1f',dirtL:'#c3834f',top:'#5cc64a',topD:'#2f8a35',topL:'#b0f070',
+ brick:'#c9693b',brickD:'#6e2e18',brickL:'#f2a06c',stone:'#b0a08c',stoneD:'#6e604f',stoneL:'#e2d4bc',plank:'#b9823f',plankD:'#6a4420',plankL:'#e6b46a'},
+{key:'grotte',name:'GROTTES CHANTANTES',style:'rock',music:'grotte',ui:'#7ff0dc',
+ dirt:'#3d4268',dirtD:'#23263f',dirtL:'#5d6596',top:'#3fc4aa',topD:'#1c7a6c',topL:'#9af5de',
+ brick:'#4d5aa8',brickD:'#232a5c',brickL:'#8592e0',stone:'#6c7090',stoneD:'#3a3d58',stoneL:'#a2a6c8',plank:'#8a6a9a',plankD:'#4a3456',plankL:'#c0a0d0'},
+{key:'nuit',name:'BOIS DE LUNE',style:'grass',music:'nuit',ui:'#bcd4ff',
+ dirt:'#4a3358',dirtD:'#2a1c36',dirtL:'#6f4f84',top:'#4c82e6',topD:'#2a4a9e',topL:'#a6caff',
+ brick:'#7a4b8c',brickD:'#3a2048',brickL:'#b282c6',stone:'#76708e',stoneD:'#403a58',stoneL:'#aaa4c4',plank:'#8c6a4a',plankD:'#4a3424',plankL:'#c49a6e'},
+{key:'citadelle',name:'CITADELLE DE FERROC',style:'castle',music:'citadelle',ui:'#ff9a4a',
+ dirt:'#5c4a4c',dirtD:'#2e2224',dirtL:'#8a7274',top:'#8e7476',topD:'#45363a',topL:'#c0a4a6',
+ brick:'#7a3c34',brickD:'#3a1814',brickL:'#b4665a',stone:'#7c7280',stoneD:'#3e3842',stoneL:'#b2a8b6',plank:'#5a5a66',plankD:'#2a2a32',plankL:'#9a9aa8'}
+];
+const WORLD_TIPS=[
+"SAUTE SUR LES ENNEMIS POUR LES ÉLIMINER",
+"MAINTIENS LE SAUT POUR MONTER PLUS HAUT",
+"COURS (MAJ OU B) POUR FRANCHIR LES GRANDS VIDES",
+"FRAPPE LES BLOCS PAR EN DESSOUS",
+"LES BLOCS À GRAINE TE RENDENT PLUS FORT",
+"LES CRACHEPIERRES TIRENT : SAUTE PAR-DESSUS",
+"LES PIKOUS NE SE LAISSENT PAS ÉCRASER",
+"LES LANTERNES SONT DES POINTS DE CONTRÔLE",
+"SURVEILLE LE VOL DES FRELUNES",
+"LA LAVE NE PARDONNE PAS",
+"LES CRACHEPIERRES VISENT DÉSORMAIS",
+"FERROC T'ATTEND. VISE SA TÊTE !"];
+
+function tGround(th,top){
+  const[c,g]=mk(16,16);const r=mulberry(top?11:5);
+  if(th.style==='castle'){
+    R(g,th.dirt,0,0,16,16);
+    for(let row=0;row<2;row++){const y=row*8;R(g,th.dirtL,0,y,16,1);R(g,th.dirtD,0,y+7,16,1);const off=row?4:12;R(g,th.dirtD,off,y,1,8);R(g,th.dirtL,(off+1)%16,y+1,1,6);}
+    for(let i=0;i<6;i++)R(g,th.dirtD,(r()*16)|0,(r()*16)|0);
+    if(top){R(g,th.top,0,0,16,4);R(g,th.topL,0,0,16,1);R(g,th.topD,0,4,16,1);for(let x=1;x<16;x+=5)R(g,th.topD,x,1,1,2);}
+  }else{
+    R(g,th.dirt,0,0,16,16);
+    for(let i=0;i<10;i++)R(g,th.dirtD,(r()*15)|0,(r()*15)|0,2,1);
+    for(let i=0;i<6;i++)R(g,th.dirtL,(r()*16)|0,(r()*16)|0);
+    if(th.style==='rock'){R(g,th.dirtD,3,9,5,1);R(g,th.dirtD,7,10,1,3);R(g,th.dirtL,10,4,3,1);R(g,th.dirtL,2,13,2,1);}
+    if(top){for(let x=0;x<16;x++){const h=4+(((x*7+3)%5)===0?2:((x%3)===0?1:0));R(g,th.top,x,0,1,h);R(g,th.topD,x,h,1,1);}R(g,th.topL,0,0,16,1);R(g,th.topL,2,1,2,1);R(g,th.topL,9,1,3,1);}
+  }
+  return c;
+}
+function tBrick(th){const[c,g]=mk(16,16);R(g,th.brick,0,0,16,16);for(let row=0;row<4;row++){const y=row*4;R(g,th.brickL,0,y,16,1);R(g,th.brickD,0,y+3,16,1);const off=row%2?4:0;for(let x=off;x<16;x+=8)R(g,th.brickD,x,y,1,3);}return c;}
+function tStone(th){const[c,g]=mk(16,16);R(g,th.stoneD,0,0,16,16);R(g,th.stone,1,1,14,14);R(g,th.stoneL,1,1,14,1);R(g,th.stoneL,1,1,1,14);R(g,mix(th.stone,th.stoneD,.5),2,14,13,1);R(g,mix(th.stone,th.stoneD,.5),14,2,1,13);R(g,th.stoneD,5,5,3,1);R(g,th.stoneD,7,6,1,3);R(g,th.stoneL,10,10,2,1);return c;}
+function tPlank(th){const[c,g]=mk(16,16);R(g,th.plankD,0,0,16,6);R(g,th.plank,0,1,16,4);R(g,th.plankL,0,1,16,1);R(g,th.plankD,4,2,1,2);R(g,th.plankD,12,2,1,2);R(g,th.plankD,2,6,2,3);R(g,th.plankD,12,6,2,3);return c;}
+function tSpikes(){const[c,g]=mk(16,16);for(let i=0;i<4;i++){const x=i*4;R(g,'#d8dae8',x+1,7,1,9);R(g,'#8a8ca2',x+2,8,1,8);R(g,'#d8dae8',x,11,1,5);R(g,'#8a8ca2',x+3,11,1,5);R(g,'#ffffff',x+1,7);}R(g,'#4a4a5a',0,14,16,2);return c;}
+function tRune(f){
+  const[c,g]=mk(16,16);R(g,'#4a2806',0,0,16,16);R(g,'#f2b233',1,1,14,14);R(g,'#ffe9a0',1,1,14,1);R(g,'#ffe9a0',1,1,1,14);R(g,'#b8701a',1,14,14,1);R(g,'#b8701a',14,1,1,14);
+  for(const[x,y]of[[2,2],[13,2],[2,13],[13,13]])R(g,'#8a4a0c',x,y);
+  const col=['#8a4a0c','#a85a10','#fff6c8','#a85a10'][f];
+  const GL=["..##..",".####.","##..##","#.##.#","##..##",".####.","..##.."];
+  GL.forEach((r,y)=>{for(let x=0;x<6;x++)if(r[x]==='#')R(g,col,5+x,4+y);});
+  return c;
+}
+function tUsed(){const[c,g]=mk(16,16);R(g,'#3a2a1e',0,0,16,16);R(g,'#7a6450',1,1,14,14);R(g,'#a88c70',1,1,14,1);R(g,'#a88c70',1,1,1,14);R(g,'#5a4636',1,14,14,1);R(g,'#5a4636',14,1,1,14);for(const[x,y]of[[3,3],[12,3],[3,12],[12,12]])R(g,'#3a2a1e',x,y);return c;}
+function tLava(f){const[c,g]=mk(16,16);R(g,'#e8541c',0,0,16,16);R(g,'#b8301a',0,10,16,6);for(let x=0;x<16;x++){const y=2+Math.round(Math.sin((x+f*4)/16*Math.PI*2)*1.5);R(g,'#ffb030',x,y-1,1,3);R(g,'#c8341a',x,0,1,Math.max(0,y-1));}R(g,'#fff3b0',(f*5)%16,3);R(g,'#fff3b0',(f*5+8)%16,4);R(g,'#ffb030',(f*3+4)%16,9,2,1);return c;}
+function tDecor(th){
+  const out=[];
+  const flower=(pet,ctr)=>{const[c,g]=mk(16,16);R(g,'#2f8a35',7,9,1,7);R(g,'#5cc64a',5,12,2,1);R(g,'#5cc64a',8,13,2,1);R(g,pet,6,6,3,1);R(g,pet,5,7,5,1);R(g,pet,6,8,3,1);R(g,ctr,7,7);return c;};
+  const tuft=(a,b)=>{const[c,g]=mk(16,16);R(g,a,4,12,1,4);R(g,a,6,10,1,6);R(g,b,7,12,1,4);R(g,a,9,11,1,5);R(g,b,11,13,1,3);return c;};
+  if(th.key==='plaine'){out.push(flower('#ff6a7a','#ffe066'),flower('#ffffff','#ffcf4a'),tuft('#5cc64a','#2f8a35'));}
+  else if(th.key==='nuit'){out.push(flower('#7ad8ff','#ffffff'),flower('#c08aff','#fff2a0'),tuft('#4c82e6','#2a4a9e'));}
+  else if(th.key==='grotte'){
+    {const[c,g]=mk(16,16);R(g,'#2a8a9a',6,9,3,7);R(g,'#7ff0e8',7,8,1,8);R(g,'#2a8a9a',10,12,2,4);R(g,'#bffaf4',10,11,1,1);R(g,'#5a3aa8',3,13,2,3);R(g,'#a07aff',3,12,1,1);out.push(c);}
+    {const[c,g]=mk(16,16);disc(g,'#5d6596',8,14.5,4,2.5);R(g,'#8a92c0',6,13,2,1);out.push(c);}
+  }else{
+    {const[c,g]=mk(16,16);R(g,'#2a2a32',7,9,2,7);R(g,'#5a5a66',4,8,8,2);R(g,'#ff8a2a',5,5,6,3);R(g,'#ffd060',6,4,4,3);R(g,'#fff3b0',7,5,2,1);out.push(c);}
+    {const[c,g]=mk(16,16);disc(g,'#45363a',5,14.5,3,2);disc(g,'#5c4a4c',11,14.5,3.5,2.2);R(g,'#8a7274',10,13,2,1);out.push(c);}
+  }
+  return out;
+}
+function skyGrad(a,b,bands){const[c,g]=mk(VW,VH);for(let i=0;i<bands;i++){g.fillStyle=mix(a,b,i/(bands-1));const y0=Math.floor(i*VH/bands);g.fillRect(0,y0,VW,Math.ceil(VH/bands)+1);}return[c,g];}
+function ridge(w,col,top,base,freqs,deco){
+  const[c,g]=mk(w,VH+40);const ys=[];
+  for(let x=0;x<w;x++){let y=base;for(const[k,a,p]of freqs)y+=Math.sin(x/w*Math.PI*2*k+p)*a;y=Math.floor(y);ys.push(y);R(g,col,x,y,1,VH+40-y);if(top)R(g,top,x,y,1,1);}
+  if(deco)deco(g,ys);
+  return c;
+}
+function buildBG(th){
+  const L=[];let sky;const r=mulberry(77+th.key.length);
+  if(th.key==='plaine'){
+    sky=skyGrad('#5aaef0','#d6f2ff',10)[0];
+    const[cc,cg]=mk(512,100);
+    for(let i=0;i<7;i++){const x=20+i*72+r()*20,y=14+r()*50,s=6+r()*5;disc(cg,'#d8eefc',x,y+3,s*2.6,s*1.1);disc(cg,'#ffffff',x-s,y,s*1.2);disc(cg,'#ffffff',x+s*.8,y-1,s*1.5);disc(cg,'#ffffff',x+s*2,y+1,s);}
+    L.push({c:cc,f:.08,y:6,drift:.1});
+    L.push({c:ridge(512,'#a4dcb0','#d0f4d4',128,[[2,12,0],[3,8,1],[5,4,2]]),f:.22,y:0});
+    L.push({c:ridge(512,'#5fb56a','#86d88e',168,[[1,10,.5],[4,7,2],[7,3,1]],(g,ys)=>{for(let i=0;i<9;i++){const x=(i*57+(r()*30|0))%512,y=ys[x];R(g,'#5a3a22',x-1,y-10,3,10);disc(g,'#3f8f4c',x+.5,y-15,7,6);disc(g,'#58b064',x-1.5,y-17,4,3);}}),f:.45,y:0});
+  }else if(th.key==='grotte'){
+    sky=skyGrad('#0b0918','#221b3e',8)[0];
+    L.push({c:ridge(512,'#1b1634','#2c2550',172,[[3,14,0],[7,6,1]],(g,ys)=>{for(let x=0;x<512;x++){const l=Math.floor(18+Math.sin(x*.07)*10+Math.sin(x*.21)*6+(x%37<4?14:0));R(g,'#17132c',x,0,1,l);}for(let i=0;i<40;i++){const x=r()*512|0,y=30+r()*130|0;const col=i%2?'#46d8c8':'#9a6aff';R(g,col,x,y);R(g,col,x,y+1);R(g,'#ffffff',x,y-1);}}),f:.2,y:0});
+    L.push({c:(()=>{const[c,g]=mk(512,VH+40);for(let i=0;i<4;i++){const x0=i*128+30+(r()*40|0),w=22+(r()*16|0);for(let y=0;y<VH+40;y++){const j=Math.round(Math.sin(y*.15+i)*2);R(g,'#262046',x0+j,y,w,1);R(g,'#332b5c',x0+j,y,2,1);}}return c;})(),f:.4,y:0});
+  }else if(th.key==='nuit'){
+    const[sc,sg]=skyGrad('#060920','#2c2060',10);sky=sc;
+    for(let i=0;i<90;i++){R(sg,i%7?'#c8d4ff':'#fff2b0',r()*VW|0,r()*130|0);}
+    disc(sg,'#fff6d0',312,40,15);disc(sg,'#e8dca8',306,36,3);disc(sg,'#e8dca8',318,46,4);disc(sg,'#e8dca8',318,32,2);
+    L.push({c:ridge(512,'#1a1d4c','#2c3170',118,[[2,22,0],[5,10,1.5],[9,4,.3]]),f:.12,y:0});
+    L.push({c:ridge(512,'#0d0f2e',null,178,[[3,6,0],[6,3,1]],(g,ys)=>{for(let i=0;i<22;i++){const x=(i*23+(r()*12|0))%512,y=ys[x],h=26+(r()*26|0);for(let k=0;k<h;k++){const w=Math.floor(k*0.35)+1;R(g,'#0d0f2e',x-w,y-h+k,w*2+1,1);}}}),f:.38,y:0});
+  }else{
+    sky=skyGrad('#12040a','#561c10',10)[0];
+    L.push({c:(()=>{const[c,g]=mk(512,VH+40);const base=150;R(g,'#260a10',0,base,512,VH+40-base);for(let i=0;i<6;i++){const x=i*86+(r()*30|0),w=26+(r()*16|0),h=50+(r()*60|0);R(g,'#260a10',x,base-h,w,h);for(let k=0;k<w;k+=6)R(g,'#260a10',x+k,base-h-5,3,5);for(let k=0;k<3;k++)R(g,'#ffa040',x+6+(k%2)*10,base-h+12+k*14,2,4);}return c;})(),f:.18,y:0});
+    L.push({c:(()=>{const[c,g]=mk(512,VH+40);for(let i=0;i<4;i++){const x=i*128+40;R(g,'#1c070c',x,0,18,VH+40);R(g,'#2c0e14',x,0,2,VH+40);for(let y=0;y<70;y+=4){R(g,'#2a1018',x+60+(y%8?1:0),y,3,3);}}return c;})(),f:.42,y:0});
+  }
+  th.bg={sky,layers:L};
+}
+function buildThemes(){
+  for(const th of THEMES){
+    th.T={g:tGround(th,false),gt:tGround(th,true),B:tBrick(th),S:tStone(th),eq:tPlank(th),sp:tSpikes(),Q:[0,1,2,3].map(tRune),U:tUsed(),lava:[0,1,2,3].map(tLava),decor:tDecor(th)};
+    buildBG(th);
+  }
+}
+function drawBG(th,cx,cy,t){
+  ctx.drawImage(th.bg.sky,0,0);
+  if(th.key==='nuit'){for(let i=0;i<14;i++){if(((t>>3)+i*7)%23<3)continue;const x=(hash2(i,3)*VW)|0,y=(hash2(i,9)*120)|0;R(ctx,'#ffffff',x,y);}}
+  for(const l of th.bg.layers){const w=l.c.width;const off=((cx*l.f+(l.drift?t*l.drift:0))%w+w)%w;let x=-Math.floor(off);const y=Math.round(l.y-cy*l.f*.4);for(;x<VW;x+=w)ctx.drawImage(l.c,x,y);}
+  // ambiance animée
+  if(th.key==='nuit'){for(let i=0;i<16;i++){const x=((hash2(i,1)*VW*2-cx*.6+Math.sin(t*.01+i)*30)%VW+VW)%VW,y=110+hash2(i,2)*90+Math.sin(t*.03+i*2)*8;if(Math.sin(t*.05+i*3)>-.2){R(ctx,'#fff6a0',x|0,y|0);R(ctx,'rgba(255,246,160,.35)',(x|0)-1,(y|0)-1,3,3);}}}
+  else if(th.key==='citadelle'){for(let i=0;i<20;i++){const sp=.3+hash2(i,4)*.5;const x=((hash2(i,5)*VW*2-cx*.5+Math.sin(t*.02+i)*12)%VW+VW)%VW,y=VH-((t*sp+hash2(i,6)*VH*2)%(VH+20));R(ctx,i%3?'#ff8a2a':'#ffd060',x|0,y|0,1,i%4?1:2);}}
+  else if(th.key==='grotte'){for(let i=0;i<10;i++){const a=Math.sin(t*.04+i*1.7);if(a<.6)continue;const x=((hash2(i,7)*VW*2-cx*.3)%VW+VW)%VW,y=40+hash2(i,8)*120;R(ctx,'#bffaf4',x|0,y|0);R(ctx,'#bffaf4',(x|0)-1,(y|0));R(ctx,'#bffaf4',(x|0)+1,(y|0));R(ctx,'#bffaf4',x|0,(y|0)-1);R(ctx,'#bffaf4',x|0,(y|0)+1);}}
+}
+
+// =====================================================================
+//  AUDIO : effets et musiques chiptune (Web Audio)
+// =====================================================================
+const NOTE_I={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+function midi(n){const m=/^([A-G])(#|b)?(\d)$/.exec(n);if(!m)return null;return 12*(+m[3]+1)+NOTE_I[m[1]]+(m[2]==='#'?1:m[2]==='b'?-1:0);}
+function mf(n){return 440*Math.pow(2,(midi(n)-69)/12);}
+function parseLine(s){const tk=s.replace(/\|/g,' ').trim().split(/\s+/);const out=new Array(tk.length).fill(null);for(let i=0;i<tk.length;i++){const m=midi(tk[i]);if(m===null)continue;let n=1;while(tk[i+n]==='-')n++;out[i]={f:440*Math.pow(2,(m-69)/12),n};}return out;}
+const TRACK_SRC={
+title:{bpm:112,lw:'p25',lv:.10,bv:.22,
+ lead:'C5 - E5 G5 - E5 C6 - | B4 - D5 G5 - D5 B5 - | A4 - C5 E5 - A5 G5 E5 | F5 - E5 D5 - C5 D5 - | C5 - E5 G5 - C6 E6 - | D6 - C6 B5 - G5 A5 - | F5 - A5 C6 - A5 G5 F5 | E5 - D5 - C5 - - -',
+ bass:'C3 . G2 . C3 . G2 . | G2 . D3 . G2 . D3 . | A2 . E3 . A2 . E3 . | F2 . C3 . G2 . D3 . | C3 . G2 . C3 . G2 . | G2 . D3 . E3 . B2 . | F2 . C3 . F2 . C3 . | G2 . D3 . C3 . . .',
+ drum:'k.h.s.h.'},
+plaine:{bpm:150,lw:'p25',lv:.10,bv:.24,
+ lead:'G4 B4 D5 - B4 D5 G5 - | F#5 - E5 D5 - B4 D5 - | C5 E5 G5 - E5 G5 C6 - | B5 - A5 G5 - E5 F#5 - | G5 - D5 B4 - G4 B4 D5 | E5 - C5 E5 - G5 E5 C5 | D5 F#5 A5 - F#5 A5 C6 B5 | A5 - F#5 - G5 - - .',
+ bass:'G2 . D3 . G2 . D3 G2 | B2 . F#2 . B2 . F#2 B2 | C3 . G2 . C3 . G2 C3 | E2 . B2 . D3 . A2 D3 | G2 . D3 . G2 . D3 G2 | C3 . G2 . C3 . E3 C3 | D3 . A2 . D3 . A2 D3 | D3 . A2 . G2 . . .',
+ drum:'khshkksh'},
+grotte:{bpm:118,lw:'p50',lv:.07,bv:.26,
+ lead:'E5 . . B4 . . E5 G5 | F#5 . . D5 . . . . | E5 . . B4 . . G5 A5 | B5 . A5 G5 F#5 . . . | C6 . . G5 . . C6 B5 | A5 . . E5 . . . . | B5 . . F#5 . . A5 G5 | F#5 . D#5 . E5 . . .',
+ bass:'E2 E2 . E3 E2 . E3 . | D2 D2 . D3 D2 . D3 . | E2 E2 . E3 E2 . E3 . | B1 B1 . B2 B1 . B2 . | C2 C2 . C3 C2 . C3 . | A1 A1 . A2 A1 . A2 . | B1 B1 . B2 B1 . B2 . | B1 . B2 . E2 . . .',
+ drum:'k..hs..h'},
+nuit:{bpm:96,lw:'p12',lv:.11,bv:.24,
+ lead:'A4 - C5 - E5 - A5 - | G5 - E5 - C5 - D5 - | F5 - - - E5 - C5 - | D5 - - - . . . . | A4 - C5 - E5 - B5 - | C6 - B5 - A5 - G5 - | F5 - A5 - G5 - E5 - | E5 - - - - - . .',
+ bass:'A2 - - - E3 - - - | C3 - - - G2 - - - | F2 - - - C3 - - - | G2 - - - D3 - - - | A2 - - - E3 - - - | F2 - - - C3 - - - | D2 - - - A2 - - - | E2 - - - B2 - - -',
+ drum:'k...s..h'},
+citadelle:{bpm:160,lw:'p25',lv:.09,bv:.24,
+ lead:'D5 D5 A4 D5 F5 E5 D5 C#5 | D5 - A4 - F4 - A4 - | A#4 A#4 F4 A#4 D5 C5 A#4 A4 | A4 - C#5 - E5 - A5 - | D6 - A5 - F5 - D5 - | E5 F5 G5 - F5 E5 D5 - | A#5 - A5 G5 F5 - E5 D5 | C#5 - E5 - D5 - . .',
+ bass:'D2 D2 D3 D2 D2 D2 D3 D2 | D2 D2 D3 D2 C2 C2 C3 C2 | A#1 A#1 A#2 A#1 A#1 A#1 A#2 A#1 | A1 A1 A2 A1 A1 A1 A2 A1 | D2 D2 D3 D2 D2 D2 D3 D2 | C2 C2 C3 C2 C2 C2 C3 C2 | A#1 A#1 A#2 A#1 G1 G1 G2 G1 | A1 A1 A2 A1 A1 . A2 .',
+ drum:'khskkhsh'},
+boss:{bpm:172,lw:'p25',lv:.10,bv:.26,
+ lead:'E5 F5 E5 . B4 . E5 . | G5 F5 E5 . D5 . F5 . | E5 F5 E5 . B4 . C5 . | B4 . A4 . B4 C5 D5 F5',
+ bass:'E2 E3 E2 E3 E2 E3 E2 E3 | F2 F3 F2 F3 F2 F3 F2 F3 | E2 E3 E2 E3 E2 E3 E2 E3 | D2 D3 D2 D3 F2 F3 F2 F3',
+ drum:'kskskSkS'},
+ending:{bpm:104,lw:'p12',lv:.11,bv:.22,
+ lead:'C5 - G5 - E5 - C6 - | B5 - G5 - D5 - G5 - | A5 - E5 - C5 - A5 - | F5 - G5 - A5 - B5 - | C6 - - - G5 - E5 - | F5 - A5 - G5 - D5 - | E5 - C5 - D5 - B4 - | C5 - - - - - . .',
+ bass:'C3 - - - G2 - - - | G2 - - - D3 - - - | A2 - - - E3 - - - | F2 - - - G2 - - - | C3 - - - G2 - - - | F2 - - - G2 - - - | C3 - - - G2 - - - | C3 - - - - - . .',
+ drum:'k.h.s.h.'}
+};
+const TRK={};for(const k in TRACK_SRC){const t=TRACK_SRC[k];TRK[k]=Object.assign({},t,{lead:parseLine(t.lead),bass:parseLine(t.bass),drum:t.drum.split('')});}
+
+const AU={
+  ctx:null,curName:null,cur:null,step:0,next:0,paused:false,
+  init(){
+    if(this.ctx){if(this.ctx.state==='suspended')this.ctx.resume();return;}
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    let c;try{c=this.ctx=new AC();}catch(e){return;}
+    this.master=c.createGain();this.master.gain.value=.55;this.master.connect(c.destination);
+    this.mg=c.createGain();this.mg.gain.value=save.music?.5:0;this.mg.connect(this.master);
+    this.sg=c.createGain();this.sg.gain.value=save.sfx?.75:0;this.sg.connect(this.master);
+    const len=c.sampleRate;const b=c.createBuffer(1,len,c.sampleRate);const d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;this.noise=b;
+    this.waves={};
+    for(const[name,duty]of[['p12',.125],['p25',.25],['p50',.5]]){const n=32,re=new Float32Array(n),im=new Float32Array(n);for(let k=1;k<n;k++){re[k]=Math.sin(2*Math.PI*k*duty)/(Math.PI*k);im[k]=(1-Math.cos(2*Math.PI*k*duty))/(Math.PI*k);}this.waves[name]=c.createPeriodicWave(re,im);}
+    setInterval(()=>this.tick(),25);
+  },
+  setMusic(on){save.music=on;persist();if(this.mg)this.mg.gain.setTargetAtTime(on?.5:0,this.ctx.currentTime,.05);},
+  setSfx(on){save.sfx=on;persist();if(this.sg)this.sg.gain.setTargetAtTime(on?.75:0,this.ctx.currentTime,.05);},
+  play(name){if(this.curName===name)return;this.curName=name;this.cur=TRK[name];this.step=0;this.next=0;},
+  stop(){this.cur=null;this.curName=null;},
+  tick(){
+    const c=this.ctx;if(!c||!this.cur||this.paused)return;
+    const tr=this.cur,sd=60/tr.bpm/2;
+    if(this.next<c.currentTime-.2)this.next=c.currentTime+.05;
+    while(this.next<c.currentTime+.2){this.sched(tr,this.step,this.next,sd);this.next+=sd;this.step++;}
+  },
+  sched(tr,s,t,sd){
+    const Ld=tr.lead[s%tr.lead.length];if(Ld)this.note(tr.lw,Ld.f,t,Ld.n*sd*.92,tr.lv,true);
+    const B=tr.bass[s%tr.bass.length];if(B)this.note('triangle',B.f,t,B.n*sd*.9,tr.bv,false);
+    const D=tr.drum[s%tr.drum.length];if(D&&D!=='.')this.drum(D,t);
+  },
+  osc(wave){const o=this.ctx.createOscillator();if(this.waves[wave])o.setPeriodicWave(this.waves[wave]);else o.type=wave;return o;},
+  note(wave,f,t,dur,vol,decay){
+    const c=this.ctx,o=this.osc(wave),g=c.createGain();o.frequency.setValueAtTime(f,t);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.006);
+    if(decay)g.gain.linearRampToValueAtTime(vol*.6,t+Math.max(.02,dur*.7));
+    g.gain.setValueAtTime(decay?vol*.6:vol,t+Math.max(.02,dur-.025));g.gain.linearRampToValueAtTime(0,t+dur);
+    o.connect(g);g.connect(this.mg);o.start(t);o.stop(t+dur+.03);
+  },
+  noiseHit(t,dur,freq,type,vol,out){
+    const c=this.ctx,s=c.createBufferSource();s.buffer=this.noise;const f=c.createBiquadFilter();f.type=type;f.frequency.value=freq;
+    const g=c.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+    s.connect(f);f.connect(g);g.connect(out);s.start(t,Math.random()*.5);s.stop(t+dur+.02);
+  },
+  drum(ch,t){
+    const c=this.ctx;
+    if(ch==='k'||ch==='K'){const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(40,t+.12);g.gain.setValueAtTime(.55,t);g.gain.exponentialRampToValueAtTime(.001,t+.15);o.connect(g);g.connect(this.mg);o.start(t);o.stop(t+.17);}
+    if(ch==='s'||ch==='S')this.noiseHit(t,.13,1800,'bandpass',.32,this.mg);
+    if(ch==='h'||ch==='K'||ch==='S')this.noiseHit(t,.04,7000,'highpass',.12,this.mg);
+  },
+  tone(wave,f0,f1,dur,vol,delay){
+    if(!this.ctx||!save.sfx)return;const c=this.ctx,t=c.currentTime+(delay||0),o=this.osc(wave),g=c.createGain();
+    o.frequency.setValueAtTime(f0,t);if(f1!==f0)o.frequency.exponentialRampToValueAtTime(f1,t+dur);
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(this.sg);o.start(t);o.stop(t+dur+.03);
+  },
+  nz(dur,freq,type,vol,delay){if(!this.ctx||!save.sfx)return;this.noiseHit(this.ctx.currentTime+(delay||0),dur,freq,type,vol,this.sg);},
+  arp(wave,notes,step,vol,len){notes.forEach((n,i)=>{if(n&&n!=='.'){const f=mf(n);this.tone(wave,f,f,len||step*1.5,vol,i*step);}});},
+  fx(n){
+    if(!this.ctx||!save.sfx)return;const T=(w,a,b,d,v,dl)=>this.tone(w,a,b,d,v,dl);
+    switch(n){
+      case 'jump':T('p25',260,640,.14,.15);break;
+      case 'jumpBig':T('p25',190,500,.17,.16);break;
+      case 'coin':T('p50',988,988,.06,.11);T('p50',1319,1319,.22,.11,.06);break;
+      case 'stomp':T('p25',520,140,.12,.2);T('triangle',300,80,.1,.2);break;
+      case 'bump':T('triangle',150,70,.09,.35);break;
+      case 'break':this.nz(.22,900,'bandpass',.4);T('triangle',220,60,.15,.3);break;
+      case 'appear':T('p25',200,900,.45,.11);break;
+      case 'power':this.arp('p25',['C5','E5','G5','C6','E6','G6','C7'],.045,.12,.07);break;
+      case 'shrink':this.arp('p25',['G5','D5','B4','G4'],.06,.14,.08);break;
+      case 'oneup':this.arp('p50',['E5','G5','E6','C6','D6','G6'],.08,.11,.09);break;
+      case 'die':this.arp('p50',['B4','F5','.','F5','F5','E5','D5','C5'],.12,.12,.14);break;
+      case 'gameover':this.arp('triangle',['C5','.','G4','.','E4','.','A4','B4','A4','G#4','A#4','G#4','G4','F4','G4'],.14,.3,.2);break;
+      case 'portal':T('p12',300,1500,.7,.12);this.arp('p25',['G4','C5','E5','G5','C6','E6','G6','C7'],.07,.11,.12);break;
+      case 'shoot':T('p50',900,220,.12,.07);this.nz(.06,3000,'highpass',.07);break;
+      case 'checkpoint':this.arp('triangle',['G5','C6','E6','G6'],.07,.28,.2);break;
+      case 'bosshit':T('square',300,60,.3,.16);this.nz(.3,500,'lowpass',.45);break;
+      case 'thud':T('triangle',90,35,.3,.5);this.nz(.25,300,'lowpass',.5);break;
+      case 'roar':T('sawtooth',95,55,.9,.13);this.nz(.8,400,'lowpass',.35);break;
+      case 'boom':this.nz(.35,600,'lowpass',.45);T('triangle',120,30,.3,.35);break;
+      case 'bossShot':T('sawtooth',620,150,.25,.08);break;
+      case 'blip':T('p50',660,660,.04,.07);break;
+      case 'select':T('p25',880,1320,.08,.1);break;
+      case 'pause':T('p50',1046,1046,.06,.1);T('p50',784,784,.08,.1,.07);break;
+      case 'warn':for(let i=0;i<3;i++)T('p50',1568,1568,.08,.09,i*.14);break;
+      case 'tick':T('p50',1760,1760,.03,.045);break;
+      case 'hop':T('triangle',300,520,.1,.13);break;
+      case 'victory':this.arp('p25',['C5','E5','G5','C6','.','G5','C6','E6','G6','.','.','C7'],.11,.12,.2);break;
+    }
+  }
+};
+
+// =====================================================================
+//  SAUVEGARDE (localStorage)
+// =====================================================================
+const SKEY='brindille-save-v1';
+const save={unlocked:0,hiscore:0,music:true,sfx:true,cur:null};
+try{const s=JSON.parse(localStorage.getItem(SKEY)||'null');if(s&&typeof s==='object')Object.assign(save,s);}catch(e){}
+function persist(){try{localStorage.setItem(SKEY,JSON.stringify(save));}catch(e){}}
+
+// =====================================================================
+//  ENTRÉES : clavier, manette, tactile
+// =====================================================================
+const ACTIONS=['left','right','up','down','jump','kup','run','start','pause','back'];
+const K={},T={},I={},PREV={};
+ACTIONS.forEach(a=>{K[a]=T[a]=I[a]=PREV[a]=false;});
+const KEYMAP={ArrowLeft:['left'],KeyA:['left'],ArrowRight:['right'],KeyD:['right'],ArrowUp:['up','kup'],KeyW:['up','kup'],ArrowDown:['down'],KeyS:['down'],
+ Space:['jump'],KeyZ:['jump'],KeyK:['jump'],ShiftLeft:['run'],ShiftRight:['run'],KeyX:['run'],KeyJ:['run'],Enter:['start'],NumpadEnter:['start'],Escape:['pause','back'],KeyP:['pause'],Backspace:['back']};
+window.addEventListener('keydown',e=>{
+  AU.init();
+  if(e.code==='KeyM'&&!e.repeat){AU.setMusic(!save.music);toast(save.music?'MUSIQUE ACTIVÉE':'MUSIQUE COUPÉE');}
+  if(e.code==='KeyF'&&!e.repeat)toggleFull();
+  const m=KEYMAP[e.code];if(!m)return;e.preventDefault();m.forEach(a=>K[a]=true);
+});
+window.addEventListener('keyup',e=>{const m=KEYMAP[e.code];if(!m)return;e.preventDefault();m.forEach(a=>K[a]=false);});
+window.addEventListener('blur',()=>{ACTIONS.forEach(a=>{K[a]=false;T[a]=false;});});
+let padIdx=-1;
+function readPad(){
+  const out={};if(!navigator.getGamepads)return out;let pads;try{pads=navigator.getGamepads();}catch(e){return out;}
+  let p=null;for(const q of pads)if(q&&q.connected){p=q;break;}if(!p)return out;
+  const b=i=>p.buttons[i]&&p.buttons[i].pressed;const ax=p.axes[0]||0,ay=p.axes[1]||0;
+  out.left=ax<-.4||b(14);out.right=ax>.4||b(15);out.up=ay<-.55||b(12);out.down=ay>.55||b(13);
+  out.jump=b(0);out.run=b(2)||b(3)||b(1)||b(7)||b(5);out.back=b(1);out.start=b(9);out.pause=b(9)||b(8);
+  return out;
+}
+function pollInput(){
+  const pd=readPad();
+  for(const a of ACTIONS){PREV[a]=I[a];I[a]=!!(K[a]||T[a]||pd[a]);}
+  if(T.pauseTap){I.pause=true;PREV.pause=false;T.pauseTap=false;}
+}
+const pr=a=>I[a]&&!PREV[a];
+const confirmPr=()=>pr('jump')||pr('start');
+
+// --- tactile multipoint ---
+const tPad=document.getElementById('dpad'),tA=document.getElementById('bA'),tB=document.getElementById('bB'),tP=document.getElementById('bP'),tF=document.getElementById('bF');
+const arms={up:tPad.querySelector('.up'),down:tPad.querySelector('.down'),left:tPad.querySelector('.left'),right:tPad.querySelector('.right')};
+const tapStarts=new Map();
+function inRect(r,x,y,m){m=m||0;return x>=r.left-m&&x<=r.right+m&&y>=r.top-m&&y<=r.bottom+m;}
+function readTouches(list){
+  T.left=T.right=T.up=T.down=T.jump=T.run=false;
+  const pr_=tPad.getBoundingClientRect(),ar=tA.getBoundingClientRect(),br=tB.getBoundingClientRect();
+  const pcx=(pr_.left+pr_.right)/2,pcy=(pr_.top+pr_.bottom)/2,prad=pr_.width/2;
+  const acx=(ar.left+ar.right)/2,acy=(ar.top+ar.bottom)/2,arad=ar.width/2;
+  const bcx=(br.left+br.right)/2,bcy=(br.top+br.bottom)/2,brad=br.width/2;
+  for(const t of list){
+    const x=t.clientX,y=t.clientY,dx=x-pcx,dy=y-pcy;
+    if(Math.hypot(dx,dy)<prad*1.4){const dz=prad*.2;if(dx<-dz)T.left=true;else if(dx>dz)T.right=true;if(dy>dz&&Math.abs(dy)>Math.abs(dx)*.55)T.down=true;else if(dy<-dz&&Math.abs(dy)>Math.abs(dx)*.55)T.up=true;continue;}
+    const da=Math.hypot(x-acx,y-acy),db=Math.hypot(x-bcx,y-bcy),ina=da<arad*1.45,inb=db<brad*1.45;
+    if(ina&&inb&&Math.abs(da-db)<arad*.4){T.jump=T.run=true;}
+    else if(ina&&(!inb||da<db))T.jump=true;else if(inb)T.run=true;
+  }
+  for(const k in arms)arms[k].classList.toggle('on',T[k]);
+  tA.classList.toggle('on',T.jump);tB.classList.toggle('on',T.run);
+}
+function onControl(x,y){
+  const p=tPad.getBoundingClientRect(),a=tA.getBoundingClientRect(),b=tB.getBoundingClientRect();
+  return Math.hypot(x-(p.left+p.right)/2,y-(p.top+p.bottom)/2)<p.width/2*1.4||inRect(a,x,y,a.width*.3)||inRect(b,x,y,b.width*.3);
+}
+function touchMode(){if(!document.body.classList.contains('touch'))document.body.classList.add('touch');}
+document.addEventListener('touchstart',e=>{
+  touchMode();if(e.cancelable)e.preventDefault();
+  for(const t of e.changedTouches)tapStarts.set(t.identifier,{x:t.clientX,y:t.clientY});
+  readTouches(e.touches);
+},{passive:false});
+document.addEventListener('touchmove',e=>{if(e.cancelable)e.preventDefault();readTouches(e.touches);},{passive:false});
+document.addEventListener('touchend',e=>{
+  if(e.cancelable)e.preventDefault();readTouches(e.touches);AU.init();
+  for(const t of e.changedTouches){const s=tapStarts.get(t.identifier);tapStarts.delete(t.identifier);if(!s)continue;if(Math.hypot(t.clientX-s.x,t.clientY-s.y)>24)continue;handleTapClient(t.clientX,t.clientY,true);}
+},{passive:false});
+document.addEventListener('touchcancel',e=>{readTouches(e.touches);for(const t of e.changedTouches)tapStarts.delete(t.identifier);});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('dblclick',e=>e.preventDefault());
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
+cvs.addEventListener('mousedown',e=>{AU.init();cvs.focus();handleTapClient(e.clientX,e.clientY,false);});
+function handleTapClient(x,y,touch){
+  const rot=document.getElementById('rotate');
+  if(touch&&getComputedStyle(rot).display!=='none'){document.body.classList.add('norotate');return;}
+  if(touch){
+    if(inRect(tP.getBoundingClientRect(),x,y,6)){T.pauseTap=true;return;}
+    if(inRect(tF.getBoundingClientRect(),x,y,6)){toggleFull();return;}
+    if(onControl(x,y))return;
+  }
+  const r=cvs.getBoundingClientRect();if(!inRect(r,x,y))return;
+  canvasTap((x-r.left)/r.width*VW,(y-r.top)/r.height*VH);
+}
+function toggleFull(){
+  const d=document,el=d.documentElement;
+  try{
+    if(d.fullscreenElement||d.webkitFullscreenElement){(d.exitFullscreen||d.webkitExitFullscreen).call(d);return;}
+    const req=el.requestFullscreen||el.webkitRequestFullscreen;
+    if(!req){toast('PLEIN ÉCRAN INDISPONIBLE ICI');return;}
+    const p=req.call(el);
+    const lock=()=>{try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});}catch(e){}};
+    if(p&&p.then)p.then(lock).catch(()=>toast('PLEIN ÉCRAN INDISPONIBLE ICI'));else lock();
+  }catch(e){toast('PLEIN ÉCRAN INDISPONIBLE ICI');}
+}
+document.addEventListener('fullscreenchange',()=>setTimeout(resize,100));
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&G.state==='play')openPause();});
+
+// =====================================================================
+//  ÉTAT DU JEU
+// =====================================================================
+const G={state:'title',t:0,st:0,lvl:0,lives:5,score:0,coins:0,time:300,tAcc:0,cp:null,big:false,freeze:0,shake:0,toast:null,toastT:0,menu:null,sel:0};
+let L=null,P=null;
+const cam={x:0,y:0,look:0};
+function toast(s){G.toast=s;G.toastT=120;}
+const SOLID=new Set(['#','B','?','P','U','S','M','W']);
+function tileAt(tx,ty){if(ty<0||ty>=L.h)return'.';if(tx<0||tx>=L.w)return'W';return L.grid[ty][tx];}
+const isSolid=(tx,ty)=>SOLID.has(tileAt(tx,ty));
+
+// --- physique sur grille (AABB) ---
+function moveX(e){
+  e.x+=e.vx;const t=Math.floor(e.y/TS),b=Math.floor((e.y+e.h-.001)/TS);
+  if(e.vx>0){const tx=Math.floor((e.x+e.w-.001)/TS);for(let ty=t;ty<=b;ty++)if(isSolid(tx,ty)){e.x=tx*TS-e.w;e.vx=0;e.hitWall=1;break;}}
+  else if(e.vx<0){const tx=Math.floor(e.x/TS);for(let ty=t;ty<=b;ty++)if(isSolid(tx,ty)){e.x=(tx+1)*TS;e.vx=0;e.hitWall=-1;break;}}
+}
+function moveY(e,isP){
+  const prevB=e.y+e.h;e.y+=e.vy;e.onGround=false;e.headHit=null;
+  const l=Math.floor(e.x/TS),r=Math.floor((e.x+e.w-.001)/TS);
+  if(e.vy>0){
+    const ty=Math.floor((e.y+e.h)/TS);
+    for(let tx=l;tx<=r;tx++){const t=tileAt(tx,ty);if(SOLID.has(t)||(t==='='&&prevB<=ty*TS+.5)){e.y=ty*TS-e.h;e.vy=0;e.onGround=true;break;}}
+  }else if(e.vy<0){
+    const ty=Math.floor(e.y/TS);const hit=[];for(let tx=l;tx<=r;tx++)if(isSolid(tx,ty))hit.push(tx);
+    if(hit.length){
+      if(isP&&hit.length===1&&l!==r){const tx=hit[0];const ol=tx===l?(tx+1)*TS-e.x:e.x+e.w-tx*TS;if(ol<=4){if(tx===l)e.x=(tx+1)*TS;else e.x=tx*TS-e.w;return;}}
+      e.y=(ty+1)*TS;e.vy=0;const cx=e.x+e.w/2;let best=hit[0];for(const tx of hit)if(Math.abs(tx*TS+8-cx)<Math.abs(best*TS+8-cx))best=tx;e.headHit={tx:best,ty};
+    }
+  }
+}
+
+// --- chargement d'un niveau ---
+function loadLevel(idx){
+  const def=LEVELS[idx],th=THEMES[def.w];
+  L={idx,def,th,w:def.map[0].length,h:def.map.length,grid:def.map.map(r=>r.split('')),ents:[],items:[],proj:[],parts:[],texts:[],cps:[],portal:null,boss:null,arenaX:-1,arenaLocked:false,bumps:[],multi:new Map()};
+  let sx=1,sy=12;
+  for(let y=0;y<L.h;y++)for(let x=0;x<L.w;x++){
+    const c=L.grid[y][x];
+    if(c==='@'){sx=x;sy=y;L.grid[y][x]='.';}
+    else if(c==='C'){L.cps.push({x:x*TS,y:(y-1)*TS,w:16,h:32,tx:x,by:(y+1)*TS,on:false});L.grid[y][x]='.';}
+    else if(c==='X'){L.portal={x:x*TS,y:(y-1)*TS,w:16,h:32};L.grid[y][x]='.';}
+    else if(c==='A'){L.arenaX=x;L.grid[y][x]='.';}
+    else if(c==='Z'){L.boss=makeBoss(x,y);L.grid[y][x]='.';}
+    else if('wekfjt'.includes(c)){L.ents.push(makeEnemy(c,x,y,def.w));L.grid[y][x]='.';}
+  }
+  let px=sx*TS+3,pb=(sy+1)*TS;
+  if(G.cp&&G.cp.lvl===idx){px=G.cp.x+3;pb=G.cp.by;for(const c of L.cps)if(c.x<=G.cp.x)c.on=true;}
+  P=makePlayer(px,pb);
+  L.ents=L.ents.filter(e=>Math.abs(e.x-P.x)>72);
+  G.time=def.time;G.tAcc=0;G.freeze=0;G.shake=0;
+  cam.look=0;updCamera(true);
+  AU.play(th.music);
+}
+function makePlayer(x,bottom){const big=G.big;const p={x,y:0,w:big?12:10,h:big?24:14,vx:0,vy:0,fallV:0,face:1,onGround:false,inv:0,coyote:0,jbuf:0,combo:0,anim:0,state:'normal',st:0,skid:false,big,morph:0};p.y=bottom-p.h;return p;}
+function setBig(b){if(P.big===b)return;P.big=b;G.big=b;P.morph=b?1:-1;if(b){P.y-=10;P.h=24;P.x-=1;P.w=12;}else{P.y+=10;P.h=14;P.x+=1;P.w=10;}}
+function makeEnemy(ch,tx,ty,world){
+  const e={type:ch,x:tx*TS+2,y:0,w:12,h:14,vx:0,vy:0,dir:-1,dead:0,dying:null,active:false,t:0,onGround:false,stomp:true,spd:1+world*.12,world};
+  if(ch==='k')e.stomp=false;
+  if(ch==='f'){e.w=14;e.h=12;e.x=tx*TS+1;e.y=ty*TS+2;e.x0=e.x;e.y0=e.y;e.ph=hash2(tx,ty)*6;return e;}
+  if(ch==='j'){e.jt=50+((tx*13)%40);e.w=14;e.x=tx*TS+1;}
+  if(ch==='t'){e.cool=80+((tx*7)%60);e.w=14;e.x=tx*TS+1;}
+  e.y=(ty+1)*TS-e.h;return e;
+}
+function makeBoss(tx,ty){return{x:tx*TS-6,y:(ty+1)*TS-28,w:26,h:28,vx:0,vy:0,hp:6,maxhp:6,state:'wait',st:0,dur:0,face:-1,inv:0,onGround:false};}
+
+// --- flux de partie ---
+function newRun(idx){G.lvl=idx;G.lives=5;G.score=0;G.coins=0;G.big=false;G.cp=null;toIntro();}
+function continueRun(){const c=save.cur;if(!c)return newRun(0);G.lvl=clamp(c.lvl|0,0,11);G.lives=Math.max(1,c.lives|0);G.score=c.score|0;G.coins=c.coins|0;G.big=!!c.big;G.cp=null;toIntro();}
+function toIntro(){G.state='intro';G.st=0;AU.stop();save.cur={lvl:G.lvl,lives:G.lives,score:G.score,coins:G.coins,big:G.big};persist();}
+function toTitle(){G.state='title';G.st=0;G.menu=titleMenu();AU.play('title');L=null;}
+function gameOver(){G.state='gameover';G.st=0;AU.stop();AU.fx('gameover');if(G.score>save.hiscore)save.hiscore=G.score;save.cur={lvl:Math.floor(G.lvl/3)*3,lives:5,score:0,coins:0,big:false};persist();}
+function levelComplete(){
+  save.unlocked=Math.max(save.unlocked,Math.min(11,G.lvl+1));if(G.score>save.hiscore)save.hiscore=G.score;
+  G.cp=null;G.big=P.big;
+  if(G.lvl>=11){save.unlocked=11;save.cur=null;persist();G.state='ending';G.st=0;AU.play('ending');return;}
+  G.lvl++;toIntro();
+}
+function openPause(){if(G.state!=='play')return;G.state='pause';G.menu=pauseMenu();AU.paused=true;AU.fx('pause');}
+function closePause(){G.state='play';AU.paused=false;}
+
+// --- score & effets ---
+function addScore(n,x,y){G.score+=n;if(x!==undefined)L.texts.push({x,y,s:String(n),life:45});}
+function oneUp(x,y){G.lives=Math.min(99,G.lives+1);AU.fx('oneup');L.texts.push({x,y,s:'1 VIE',life:60,col:'#7ff09a'});}
+function addCoin(x,y){G.coins++;addScore(50);AU.fx('coin');for(let i=0;i<4;i++)part(x,y,(Math.random()-.5)*2,-Math.random()*2,'#fff1a0',16,1,.05);if(G.coins>=100){G.coins-=100;oneUp(x,y-10);}}
+function part(x,y,vx,vy,col,life,size,grav){L.parts.push({x,y,vx,vy,col,life,size:size||2,grav:grav===undefined?.2:grav});}
+function poof(e,col){for(let i=0;i<12;i++)part(e.x+e.w/2,e.y+e.h/2,(Math.random()-.5)*3,(Math.random()-.7)*3,i%2?'#ffffff':(col||'#d8d0f0'),26,2,.04);}
+function dust(x,y,n){for(let i=0;i<(n||4);i++)part(x+(Math.random()-.5)*8,y,(Math.random()-.5)*1.2,-Math.random()*.8,'rgba(240,230,210,.8)',18,2,0);}
+
+// --- blocs ---
+function hitBlock(tx,ty){
+  const t=tileAt(tx,ty);
+  // ce qui se trouve sur le bloc est projeté
+  for(const e of L.ents){if(e.dead||!e.onGround)continue;if(Math.abs(e.y+e.h-ty*TS)<3&&e.x+e.w>tx*TS&&e.x<tx*TS+16){killFlip(e);addScore(100,e.x,e.y);}}
+  for(const it of L.items){if(it.kind==='seed'&&!it.rise&&Math.abs(it.y+it.h-ty*TS)<3&&it.x+it.w>tx*TS&&it.x<tx*TS+16){it.vy=-4;it.dir=it.x+it.w/2<tx*TS+8?-1:1;}}
+  for(let y=ty-1;y<=ty-1;y++){const c=tileAt(tx,y);if(c==='o'){L.grid[y][tx]='.';addCoin(tx*TS+8,y*TS+8);}}
+  const bump=()=>L.bumps.push({tx,ty,t:0});
+  if(t==='?'){L.grid[ty][tx]='U';coinPop(tx,ty);bump();}
+  else if(t==='P'){L.grid[ty][tx]='U';L.items.push({kind:'seed',x:tx*TS+2,y:ty*TS+2,w:12,h:12,vx:0,vy:0,dir:1,rise:28});AU.fx('appear');bump();}
+  else if(t==='M'){const k=tx+','+ty,n=(L.multi.get(k)||0)+1;L.multi.set(k,n);coinPop(tx,ty);if(n>=8)L.grid[ty][tx]='U';bump();}
+  else if(t==='B'){if(P.big){L.grid[ty][tx]='.';addScore(50);AU.fx('break');for(let i=0;i<4;i++)part(tx*TS+4+(i%2)*8,ty*TS+4+(i>>1)*8,i%2?1.4:-1.4,-5+(i>>1)*1.8,L.th.brick,90,4,.32);}else{bump();AU.fx('bump');}}
+  else AU.fx('bump');
+}
+function coinPop(tx,ty){L.items.push({kind:'coinpop',x:tx*TS,y:ty*TS-12,vy:-5.5,t:28});G.coins++;G.score+=50;AU.fx('coin');if(G.coins>=100){G.coins-=100;oneUp(tx*TS,ty*TS-20);}}
+function killFlip(e){e.dead=140;e.dying='flip';e.vy=-4;e.vx=(Math.random()-.5)*1.5;AU.fx('stomp');}
+
+// =====================================================================
+//  MISE À JOUR
+// =====================================================================
+function update(){
+  pollInput();G.t++;G.st++;
+  if(G.toastT>0)G.toastT--;
+  switch(G.state){
+    case 'title':updTitle();break;
+    case 'select':updSelect();break;
+    case 'intro':if(G.st>140||(G.st>25&&confirmPr())){loadLevel(G.lvl);G.state='play';G.st=0;}break;
+    case 'play':updPlay();break;
+    case 'pause':if(pr('pause')||pr('back')){closePause();break;}menuUpdate(G.menu);break;
+    case 'gameover':if(G.st>300||(G.st>80&&confirmPr()))toTitle();break;
+    case 'ending':if(G.st>120&&confirmPr())toTitle();break;
+  }
+}
+function updPlay(){
+  if(pr('pause')||pr('start')){openPause();return;}
+  updParticles();
+  if(G.freeze>0){G.freeze--;if(G.freeze===0)P.morph=0;return;}
+  if(G.shake>0)G.shake--;
+  updPlayer();
+  if(G.state!=='play')return;
+  if(P.state==='dead'){return;}
+  for(const e of L.ents)updEnemy(e);
+  enemyBumps();
+  L.ents=L.ents.filter(e=>!e.remove);
+  if(L.boss)updBoss(L.boss);
+  updItems();updProj();
+  for(const b of L.bumps)b.t++;L.bumps=L.bumps.filter(b=>b.t<10);
+  if(P.state==='normal')interactions();
+  updCamera(false);
+  if(P.state==='normal'&&++G.tAcc>=60){G.tAcc=0;G.time--;if(G.time===60)AU.fx('warn');if(G.time<=0){G.time=0;killPlayer(false);}}
+}
+function updParticles(){
+  for(const p of L.parts){p.x+=p.vx;p.y+=p.vy;p.vy+=p.grav;p.life--;}L.parts=L.parts.filter(p=>p.life>0);
+  for(const t of L.texts){t.y-=.5;t.life--;}L.texts=L.texts.filter(t=>t.life>0);
+}
+function updPlayer(){
+  const p=P;
+  if(p.state==='dead'){
+    p.st++;if(!p.fell&&p.st>28){p.vy=Math.min(p.vy+.25,6);p.y+=p.vy;}
+    if(p.st>160){G.lives--;if(G.lives<=0)gameOver();else toIntro();}
+    return;
+  }
+  if(p.state==='portal'){
+    p.st++;const tx=L.portal.x+8-p.w/2,ty=L.portal.y+18-p.h/2;p.x+=(tx-p.x)*.1;p.y+=(ty-p.y)*.1;
+    if(p.st>70){if(G.time>0){const d=Math.min(G.time,3);G.time-=d;G.score+=d*10;if(p.st%4===0)AU.fx('tick');}else if(!p.done)p.done=p.st;}
+    if(p.done&&p.st>p.done+50)levelComplete();
+    return;
+  }
+  const left=I.left,right=I.right,run=I.run,max=run?2.6:1.5;
+  const acc=p.onGround?(run?.11:.085):.075;
+  p.skid=false;
+  if(left&&!right){p.face=-1;if(p.vx>0&&p.onGround){p.vx=Math.max(p.vx-.24,-acc);p.skid=true;}else if(p.vx>-max)p.vx=Math.max(-max,p.vx-acc);}
+  else if(right&&!left){p.face=1;if(p.vx<0&&p.onGround){p.vx=Math.min(p.vx+.24,acc);p.skid=true;}else if(p.vx<max)p.vx=Math.min(max,p.vx+acc);}
+  else if(p.onGround){if(p.vx>0)p.vx=Math.max(0,p.vx-.12);else if(p.vx<0)p.vx=Math.min(0,p.vx+.12);}
+  if(Math.abs(p.vx)>max&&p.onGround)p.vx-=Math.sign(p.vx)*.05;
+  if(p.skid&&G.t%4===0)dust(p.x+p.w/2,p.y+p.h-1,1);
+  const held=I.jump||I.kup;
+  if(pr('jump')||pr('kup'))p.jbuf=7;else if(p.jbuf>0)p.jbuf--;
+  if(p.onGround)p.coyote=6;else if(p.coyote>0)p.coyote--;
+  if(p.jbuf>0&&p.coyote>0){p.vy=-(5.9+Math.abs(p.vx)*.26);p.jbuf=0;p.coyote=0;p.onGround=false;AU.fx(p.big?'jumpBig':'jump');}
+  const g=p.vy<0?(held?.25:.75):.42;
+  p.vy=Math.min(p.vy+g,6.5);
+  p.fallV=p.vy;
+  p.hitWall=0;moveX(p);
+  const was=p.onGround;moveY(p,true);
+  if(p.onGround){p.combo=0;if(!was&&p.fallV>3)dust(p.x+p.w/2,p.y+p.h-1,4);}
+  if(p.headHit)hitBlock(p.headHit.tx,p.headHit.ty);
+  // tuiles traversées : pièces, piques, lave
+  const l=Math.floor(p.x/TS),r=Math.floor((p.x+p.w-.001)/TS),t=Math.floor(p.y/TS),b=Math.floor((p.y+p.h-.001)/TS);
+  for(let ty=t;ty<=b;ty++)for(let tx=l;tx<=r;tx++){
+    const c=tileAt(tx,ty);
+    if(c==='o'){L.grid[ty][tx]='.';addCoin(tx*TS+8,ty*TS+8);}
+    else if(c==='^'&&p.y+p.h>ty*TS+8){if(p.inv<=0){hurtPlayer();if(p.state==='normal')p.vy=-4.5;}}
+    else if(c==='~'&&p.y+p.h>ty*TS+5)killPlayer(false);
+  }
+  if(p.inv>0)p.inv--;
+  p.anim+=Math.abs(p.vx)*.11;
+  if(p.y>L.h*TS+8)killPlayer(true);
+}
+function hurtPlayer(){
+  if(P.inv>0||P.state!=='normal')return;
+  if(P.big){setBig(false);P.inv=120;G.freeze=30;AU.fx('shrink');}
+  else killPlayer(false);
+}
+function killPlayer(fell){if(P.state==='dead')return;P.state='dead';P.st=0;P.vx=0;P.vy=fell?0:-5.5;P.fell=fell;P.big=false;G.big=false;if(P.h>14){P.y+=10;P.h=14;}AU.stop();AU.fx('die');}
+function updCamera(snap){
+  const target=P.face*26+P.vx*10;cam.look+=(target-cam.look)*(snap?1:.04);
+  let tx=P.x+P.w/2-VW/2+cam.look,ty=P.y+P.h/2-VH/2-8;
+  const minX=L.arenaLocked?L.arenaX*TS:0,maxX=L.w*TS-VW,maxY=L.h*TS-VH;
+  tx=clamp(tx,minX,maxX);ty=clamp(ty,0,maxY);
+  if(snap){cam.x=tx;cam.y=ty;}else{cam.x+=(tx-cam.x)*.12;cam.y+=(ty-cam.y)*.08;}
+  cam.x=clamp(cam.x,minX,maxX);
+}
+function updEnemy(e){
+  if(!e.active){if(e.x<cam.x+VW+40&&e.x+e.w>cam.x-40)e.active=true;else return;}
+  if(e.dead){e.dead--;if(e.dying==='flip'){e.vy+=.3;e.y+=e.vy;e.x+=e.vx;}if(e.dead<=0||e.y>L.h*TS+40)e.remove=true;return;}
+  e.t++;
+  switch(e.type){
+    case 'w':case 'e':case 'k':{
+      e.vx=e.dir*(e.type==='k'?.42:.5)*e.spd;
+      if((e.type==='e'||e.type==='k')&&e.onGround){const fx=e.dir>0?e.x+e.w+1:e.x-1;const c=tileAt(Math.floor(fx/TS),Math.floor((e.y+e.h+2)/TS));if(!SOLID.has(c)&&c!=='='){e.dir*=-1;e.vx=-e.vx;}}
+      e.hitWall=0;moveX(e);if(e.hitWall)e.dir=-e.dir;
+      e.vy=Math.min(e.vy+.35,6);moveY(e);break;}
+    case 'f':{
+      e.x+=e.dir*.55*e.spd;if(Math.abs(e.x-e.x0)>60){e.dir*=-1;e.x=e.x0+Math.sign(e.x-e.x0)*60;}
+      e.y=e.y0+Math.sin(e.t*.05+e.ph)*(18+e.world*3);break;}
+    case 'j':{
+      if(e.onGround){e.vx*=.6;if(e.land>0)e.land--;if(--e.jt<=0){e.vy=-(4.6+e.world*.35);e.vx=(Math.sign(P.x-e.x)||1)*1.05*e.spd;e.jt=60+((e.t*17)%50);if(Math.abs(e.x-P.x)<VW)AU.fx('hop');}}
+      e.hitWall=0;moveX(e);const was=e.onGround;e.vy=Math.min(e.vy+.3,6);moveY(e);if(e.onGround&&!was)e.land=8;break;}
+    case 't':{
+      e.dir=P.x+P.w/2<e.x+e.w/2?-1:1;e.vy=Math.min(e.vy+.35,6);moveY(e);
+      const dx=Math.abs(P.x-e.x);
+      if(dx<230&&e.x>cam.x-8&&e.x<cam.x+VW+8){
+        if(--e.cool<=0){
+          const sp=1.35+e.world*.15;let vx=e.dir*sp,vy=0;
+          if(e.world>=2){const ddx=P.x+P.w/2-(e.x+e.w/2),ddy=P.y+P.h/2-(e.y+8),d=Math.hypot(ddx,ddy)||1;vx=ddx/d*sp;vy=ddy/d*sp;}
+          L.proj.push({kind:'seed',x:e.x+e.w/2-3+e.dir*7,y:e.y+6,w:6,h:6,vx,vy,life:260});
+          e.cool=Math.max(70,150-e.world*22);AU.fx('shoot');
+        }
+      }else if(e.cool<30)e.cool=30;
+      break;}
+  }
+  if(e.y>L.h*TS+32)e.remove=true;
+}
+function enemyBumps(){
+  const ws=L.ents.filter(e=>!e.dead&&e.active&&'wekj'.includes(e.type));
+  for(let i=0;i<ws.length;i++)for(let j=i+1;j<ws.length;j++){const a=ws[i],b=ws[j];if(overlap(a,b)){if(a.x<b.x){if(a.type!=='j')a.dir=-1;if(b.type!=='j')b.dir=1;}else{if(a.type!=='j')a.dir=1;if(b.type!=='j')b.dir=-1;}}}
+}
+function stompEnemy(e){
+  P.vy=(I.jump||I.kup)?-6.4:-4.2;P.combo++;
+  const pts=[100,200,400,800,1000,2000,4000,8000];
+  if(P.combo>8)oneUp(e.x,e.y);else addScore(pts[P.combo-1],e.x+e.w/2-6,e.y-4);
+  AU.fx('stomp');
+  if(e.type==='f'){e.dead=140;e.dying='flip';e.vy=0;e.vx=0;}
+  else if(e.type==='t'||e.type==='j'){e.remove=true;poof(e,e.type==='j'?'#3fd29e':'#a4a2b4');}
+  else{e.dead=30;e.dying='squash';}
+}
+function interactions(){
+  for(const e of L.ents){
+    if(!e.active||e.dead||e.remove)continue;
+    const hb=e.type==='f'?{x:e.x+1,y:e.y+2,w:e.w-2,h:e.h-2}:e;
+    if(!overlap(P,hb))continue;
+    if(e.stomp&&P.fallV>0&&P.y+P.h-P.fallV<=hb.y+7)stompEnemy(e);
+    else hurtPlayer();
+  }
+  for(const it of L.items){if(it.kind==='seed'&&!it.rise&&overlap(P,it)){it.gone=true;addScore(1000,it.x,it.y);AU.fx('power');if(!P.big){setBig(true);G.freeze=36;}for(let i=0;i<14;i++)part(P.x+P.w/2,P.y+P.h/2,Math.cos(i)*2.5,Math.sin(i)*2.5,i%2?'#ffd060':'#86e264',24,2,0);}}
+  for(const pj of L.proj){if(overlap(P,pj)){pj.gone=true;hurtPlayer();}}
+  for(const c of L.cps){if(!c.on&&P.x+P.w>c.x+4&&P.x<c.x+12&&P.y<c.by){c.on=true;G.cp={lvl:G.lvl,x:c.x,by:c.by};AU.fx('checkpoint');L.texts.push({x:c.x-40,y:c.y-6,s:'POINT DE CONTRÔLE',life:80,col:'#ffd25a'});for(let i=0;i<16;i++)part(c.x+8,c.y+5,Math.cos(i*.4)*2,Math.sin(i*.4)*2-1,'#ffd25a',30,2,.05);}}
+  if(L.portal&&overlap(P,{x:L.portal.x+3,y:L.portal.y+4,w:10,h:28})){P.state='portal';P.st=0;P.vx=P.vy=0;AU.stop();AU.fx('portal');}
+  if(L.arenaX>=0&&!L.arenaLocked&&P.x>(L.arenaX+2)*TS&&P.state==='normal'){
+    L.arenaLocked=true;for(let y=2;y<=12;y++)L.grid[y][L.arenaX]='S';
+    G.shake=20;AU.play('boss');L.texts.push({x:(L.arenaX+8)*TS,y:5*TS,s:'FERROC, LE GOLEM D\'AIRAIN',life:120,col:'#ff9a4a',big:true});
+  }
+}
+function updItems(){
+  for(const it of L.items){
+    if(it.kind==='coinpop'){it.vy+=.38;it.y+=it.vy;if(--it.t<=0){it.gone=true;L.texts.push({x:it.x+2,y:it.y,s:'50',life:30});}continue;}
+    if(it.rise>0){it.y-=.5;it.rise--;continue;}
+    it.vx=it.dir*.9;it.hitWall=0;moveX(it);if(it.hitWall)it.dir=-it.dir;it.vy=Math.min(it.vy+.3,6);moveY(it);
+    if(it.y>L.h*TS+20)it.gone=true;
+  }
+  L.items=L.items.filter(i=>!i.gone);
+}
+function updProj(){
+  for(const p of L.proj){
+    p.x+=p.vx;p.y+=p.vy;if(--p.life<=0)p.gone=true;
+    if(p.kind==='wave'){if(isSolid(Math.floor((p.x+(p.vx>0?p.w:0))/TS),Math.floor((p.y+p.h/2)/TS))){p.gone=true;poof(p,'#ff8a2a');}if(G.t%3===0)part(p.x+p.w/2,p.y+p.h,0,-.6,'#ff8a2a',14,2,0);continue;}
+    if(isSolid(Math.floor((p.x+p.w/2)/TS),Math.floor((p.y+p.h/2)/TS))){p.gone=true;for(let i=0;i<5;i++)part(p.x+3,p.y+3,(Math.random()-.5)*2,(Math.random()-.5)*2,p.kind==='bolt'?'#ff7ad0':'#c8a060',14,1,0);}
+    if(p.x<cam.x-60||p.x>cam.x+VW+60)p.gone=true;
+  }
+  L.proj=L.proj.filter(p=>!p.gone);
+}
+// --- boss ---
+function toBoss(s,dur){const b=L.boss;b.state=s;b.st=0;b.dur=dur||0;}
+function updBoss(b){
+  if(b.state==='gone')return;
+  if(b.state==='wait'){b.vy=Math.min(b.vy+.4,7);moveY(b);if(L.arenaLocked)toBoss('intro');return;}
+  b.st++;if(b.inv>0)b.inv--;
+  const rage=b.hp<=3,cx=b.x+b.w/2;
+  switch(b.state){
+    case 'intro':if(b.st===10){G.shake=40;AU.fx('roar');}if(b.st>80)toBoss('walk',90);break;
+    case 'walk':b.face=Math.sign(P.x+P.w/2-cx)||-1;b.vx=b.face*(.6+(b.maxhp-b.hp)*.13);if(b.st>b.dur)toBoss(Math.random()<.5?'crouch':'aim');break;
+    case 'crouch':b.vx=0;if(b.st>26){b.vy=-7.6;b.vx=clamp((P.x-b.x)/46,-2.3,2.3);toBoss('air');AU.fx('hop');}break;
+    case 'air':if(b.onGround&&b.st>4){G.shake=18;AU.fx('thud');dust(cx,b.y+b.h,10);
+      if(rage){for(const d of[-1,1])L.proj.push({kind:'wave',x:cx-5+d*14,y:b.y+b.h-10,w:10,h:10,vx:d*2.2,vy:0,life:220});}
+      toBoss('walk',60+Math.random()*50);}break;
+    case 'aim':b.vx=0;b.face=Math.sign(P.x+P.w/2-cx)||-1;
+      if(b.st===36){const a0=Math.atan2(P.y+P.h/2-(b.y+10),P.x+P.w/2-cx);const n=rage?2:1;for(let k=-n;k<=n;k++){const a=a0+k*.24;L.proj.push({kind:'bolt',x:cx-4,y:b.y+8,w:8,h:8,vx:Math.cos(a)*2.1,vy:Math.sin(a)*2.1,life:240});}AU.fx('bossShot');}
+      if(b.st>64)toBoss('walk',70);break;
+    case 'hurt':b.vx*=.9;if(b.st>46)toBoss(rage?'crouch':'walk',50);break;
+    case 'dying':b.vx=0;if(b.st%7===0){poof({x:b.x+Math.random()*b.w-4,y:b.y+Math.random()*b.h-4,w:8,h:8},'#ff9a4a');AU.fx('boom');G.shake=6;}
+      if(b.st>130){b.state='gone';L.portal={x:(L.arenaX+12)*TS,y:11*TS,w:16,h:32};addScore(5000,cx-12,b.y);AU.fx('victory');for(let i=0;i<30;i++)part(cx,b.y+b.h/2,Math.cos(i)*3,Math.sin(i)*3-1,i%2?'#ffd060':'#ffffff',40,3,.08);}
+      return;
+  }
+  b.vy=Math.min(b.vy+.4,7);b.hitWall=0;moveX(b);if(b.hitWall&&b.state==='walk'){b.face*=-1;}moveY(b);
+  if(P.state==='normal'&&overlap(P,{x:b.x+2,y:b.y+2,w:b.w-4,h:b.h-2})){
+    const fromTop=P.fallV>0&&P.y+P.h-P.fallV<=b.y+9;
+    if(fromTop&&b.inv===0){
+      b.hp--;b.inv=70;P.vy=-6.6;P.vx=P.x+P.w/2<cx?-2:2;AU.fx('bosshit');G.shake=12;addScore(1000,cx-12,b.y-6);
+      if(b.hp<=0){toBoss('dying');AU.stop();L.proj=[];}else toBoss('hurt');
+    }else if(fromTop){P.vy=-5;P.vx=P.x+P.w/2<cx?-2:2;}
+    else hurtPlayer();
+  }
+}
+
+// =====================================================================
+//  MENUS
+// =====================================================================
+function titleMenu(){
+  const items=[];
+  if(save.cur)items.push({label:()=>'CONTINUER  (MONDE '+lvlName(save.cur.lvl)+')',act:continueRun});
+  items.push({label:'NOUVELLE PARTIE',act:()=>newRun(0)});
+  items.push({label:'CHOIX DU NIVEAU',act:()=>{G.state='select';G.st=0;G.sel=Math.min(save.unlocked,11);}});
+  items.push({label:()=>'MUSIQUE : '+(save.music?'OUI':'NON'),act:()=>AU.setMusic(!save.music),adj:()=>AU.setMusic(!save.music)});
+  items.push({label:()=>'EFFETS SONORES : '+(save.sfx?'OUI':'NON'),act:()=>AU.setSfx(!save.sfx),adj:()=>AU.setSfx(!save.sfx)});
+  items.push({label:'PLEIN ÉCRAN',act:toggleFull});
+  return{items,sel:0,rects:[]};
+}
+function pauseMenu(){
+  return{items:[
+    {label:'REPRENDRE',act:closePause},
+    {label:'RECOMMENCER LE NIVEAU',act:()=>{AU.paused=false;G.cp=null;G.big=false;toIntro();}},
+    {label:()=>'MUSIQUE : '+(save.music?'OUI':'NON'),act:()=>AU.setMusic(!save.music),adj:()=>AU.setMusic(!save.music)},
+    {label:()=>'EFFETS SONORES : '+(save.sfx?'OUI':'NON'),act:()=>AU.setSfx(!save.sfx),adj:()=>AU.setSfx(!save.sfx)},
+    {label:'PLEIN ÉCRAN',act:toggleFull},
+    {label:"QUITTER VERS L'ÉCRAN TITRE",act:()=>{AU.paused=false;toTitle();}}],sel:0,rects:[]};
+}
+function menuUpdate(m){
+  const n=m.items.length;
+  if(pr('up')){m.sel=(m.sel+n-1)%n;AU.fx('blip');}
+  if(pr('down')){m.sel=(m.sel+1)%n;AU.fx('blip');}
+  const it=m.items[m.sel];
+  if((pr('left')||pr('right'))&&it.adj){it.adj();AU.fx('blip');}
+  if(confirmPr()){AU.fx('select');it.act();}
+}
+function menuDraw(m,y0,gap){
+  m.rects=[];gap=gap||15;
+  m.items.forEach((it,i)=>{
+    const s=typeof it.label==='function'?it.label():it.label;const y=y0+i*gap,w=textW(s),x=(VW-w)>>1,sel=i===m.sel;
+    if(sel){ctx.fillStyle='rgba(255,207,74,.16)';ctx.fillRect(x-16,y-4,w+32,15);text('>',x-12+((G.t>>4)&1),y,'#ffcf4a');}
+    text(s,x,y,sel?'#ffcf4a':'#f4ead2');m.rects.push({x:x-24,y:y-5,w:w+48,h:gap});
+  });
+}
+function canvasTap(x,y){
+  if(G.state==='title'||G.state==='pause'){const m=G.menu;m.rects.forEach((r,i)=>{if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){m.sel=i;AU.fx('select');m.items[i].act();}});}
+  else if(G.state==='select'){for(const r of G.selRects||[])if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){G.sel=r.i;selectPick(r.i);}}
+  else if(G.state==='intro'&&G.st>25){loadLevel(G.lvl);G.state='play';G.st=0;}
+  else if(G.state==='gameover'&&G.st>80)toTitle();
+  else if(G.state==='ending'&&G.st>120)toTitle();
+}
+function updTitle(){menuUpdate(G.menu);}
+function updSelect(){
+  let s=G.sel;
+  if(pr('left'))s--;if(pr('right'))s++;
+  if(pr('up'))s=s===12?9:s-3;if(pr('down'))s=s>=9?12:s+3;
+  s=clamp(s,0,12);if(s!==G.sel){G.sel=s;AU.fx('blip');}
+  if(confirmPr())selectPick(G.sel);
+  if(pr('back'))toTitle();
+}
+function selectPick(s){if(s===12){AU.fx('select');toTitle();return;}if(s<=save.unlocked){AU.fx('select');newRun(s);}else AU.fx('bump');}
+
+// =====================================================================
+//  RENDU
+// =====================================================================
+function render(){
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;
+  switch(G.state){
+    case 'title':renderTitle();break;
+    case 'select':renderSelect();break;
+    case 'intro':renderIntro();break;
+    case 'play':case 'pause':renderPlay();if(G.state==='pause')renderPause();break;
+    case 'gameover':renderGameOver();break;
+    case 'ending':renderEnding();break;
+  }
+  if(G.toastT>0&&G.toast){const w=textW(G.toast)+16;ctx.fillStyle='rgba(13,10,20,.85)';ctx.fillRect((VW-w)>>1,VH-30,w,15);ctext(G.toast,VH-26,'#ffcf4a');}
+}
+function drawTiles(cx,cy){
+  const th=L.th,Tl=th.T;
+  const x0=Math.max(0,Math.floor(cx/TS)),x1=Math.min(L.w-1,x0+Math.ceil(VW/TS)+1),y0=Math.max(0,Math.floor(cy/TS)),y1=Math.min(L.h-1,y0+Math.ceil(VH/TS)+1);
+  const rf=[0,1,2,1][(G.t>>3)&3],lf=(G.t>>3)&3,cf=(G.t>>3)&3;
+  for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++){
+    const t=L.grid[ty][tx];if(t==='.')continue;let img=null;
+    switch(t){
+      case '#':{const up=ty>0?L.grid[ty-1][tx]:'#';img=(up!=='#')?Tl.gt:Tl.g;
+        if(up==='.'&&ty>2&&hash2(tx,ty)<.22){const d=Tl.decor;ctx.drawImage(d[(hash2(ty,tx)*d.length)|0],tx*TS-cx,(ty-1)*TS-cy);}break;}
+      case 'B':case 'M':img=Tl.B;break;
+      case '?':case 'P':img=Tl.Q[rf];break;
+      case 'U':img=Tl.U;break;
+      case 'S':img=Tl.S;break;
+      case '=':img=Tl.eq;break;
+      case '^':img=Tl.sp;break;
+      case '~':img=Tl.lava[lf];break;
+      case 'o':img=COIN[cf];break;
+    }
+    if(!img)continue;
+    let oy=0;for(const b of L.bumps)if(b.tx===tx&&b.ty===ty)oy=-Math.round(Math.sin(b.t/10*Math.PI)*5);
+    ctx.drawImage(img,tx*TS-cx,ty*TS-cy+oy);
+  }
+}
+function sprAt(pair,x,y,face,flipV,dw,dh){
+  const c=face<0?pair[1]:pair[0];dw=dw||c.width;dh=dh||c.height;x=Math.round(x);y=Math.round(y);
+  if(flipV){ctx.save();ctx.translate(x,y+dh);ctx.scale(1,-1);ctx.drawImage(c,0,0,dw,dh);ctx.restore();}else ctx.drawImage(c,x,y,dw,dh);
+}
+function drawEnemy(e,cx,cy){
+  const x=e.x-cx,y=e.y-cy,fv=e.dying==='flip';
+  switch(e.type){
+    case 'w':case 'e':{const S=e.type==='w'?SPR.walk:SPR.walkE;const s=e.dying==='squash'?S.sq:((e.t>>3)&1?S.a:S.b);sprAt(s,x+e.w/2-8,y+e.h-16,1,fv);break;}
+    case 'k':sprAt((e.t>>3)&1?SPR.spiky.a:SPR.spiky.b,x+e.w/2-8,y+e.h-16,e.dir,fv);break;
+    case 'f':sprAt((e.t>>2)&1?SPR.fly.a:SPR.fly.b,x+e.w/2-8,y+e.h/2-6,1,fv);break;
+    case 'j':{let w=16,h=16;if(!e.onGround&&!e.dead){w=13;h=19;}else if(e.land>0){w=19;h=13;}sprAt(SPR.jelly,x+e.w/2-w/2,y+e.h-h,1,fv,w,h);break;}
+    case 't':{const hot=e.cool<26&&Math.abs(P.x-e.x)<230;sprAt(hot?SPR.shootHot:SPR.shoot,x+e.w/2-8,y+e.h-16,e.dir,fv);break;}
+  }
+}
+function drawPlayer(cx,cy){
+  const p=P;
+  if(p.inv>0&&(G.t>>2)&1&&p.state==='normal'&&G.freeze===0)return;
+  let big=p.big;if(G.freeze>0&&p.morph&&((G.t>>2)&1))big=!big;
+  const set=big?SPR.hb:SPR.hs;let fr;
+  if(p.state==='dead')fr=SPR.hs.dead;
+  else if(!p.onGround)fr=set.jump;
+  else if(p.skid)fr=set.run2;
+  else if(Math.abs(p.vx)>.12){fr=[set.run1,set.idle,set.run2,set.idle][Math.floor(p.anim)%4];}
+  else fr=set.idle;
+  const c=fr[p.face<0?1:0];const dx=Math.round(p.x+p.w/2-8-cx),dy=Math.round(p.y+p.h-c.height-cy);
+  if(p.state==='portal'){const s=Math.max(0,1-p.st/60);if(s<=0)return;ctx.save();ctx.translate(dx+8,dy+c.height/2);ctx.rotate(p.st*.25);ctx.scale(s,s);ctx.drawImage(c,-8,-c.height/2);ctx.restore();return;}
+  ctx.drawImage(c,dx,dy);
+}
+function drawPortal(po,cx,cy){
+  const x=Math.round(po.x-cx),y=Math.round(po.y-cy),ox=x+8,oy=y+16;
+  ctx.fillStyle='rgba(40,10,70,.75)';for(let k=-14;k<=14;k++){const w=Math.round(Math.sqrt(1-(k*k)/(15*15))*8);ctx.fillRect(ox-w,oy+k,w*2,1);}
+  const cols=['#7af0ff','#b07aff','#ffffff','#ff9cf0'];
+  for(let i=0;i<22;i++){const a=i/22*Math.PI*2+G.t*.06;const r=1-(i%3)*.12;R(ctx,cols[(i+(G.t>>3))%4],Math.round(ox+Math.cos(a)*9*r)-1,Math.round(oy+Math.sin(a)*15*r)-1,2,2);}
+  for(let i=0;i<6;i++){const a=-G.t*.09+i;R(ctx,'#ffffff',Math.round(ox+Math.cos(a)*4),Math.round(oy+Math.sin(a)*8));}
+}
+function drawCheckpoint(c,cx,cy){
+  const x=Math.round(c.x-cx),y=Math.round(c.y-cy);
+  R(ctx,'#2a1a12',x+7,y+6,3,26);R(ctx,'#6a4a32',x+8,y+6,1,26);R(ctx,'#2a1a12',x+4,y+30,9,2);
+  R(ctx,'#2a1a12',x+3,y,11,12);R(ctx,c.on?'#ffd25a':'#3a3a4a',x+4,y+2,9,8);R(ctx,c.on?'#fff6c0':'#55556a',x+6,y+4,3,4);R(ctx,'#2a1a12',x+5,y-2,7,2);
+  if(c.on){ctx.fillStyle='rgba(255,210,90,'+(.18+.08*Math.sin(G.t*.1))+')';ctx.beginPath();ctx.arc(x+8.5,y+6,14,0,Math.PI*2);ctx.fill();R(ctx,'#ee4a3c',x+10,y+13,6,3);R(ctx,'#a82a35',x+15,y+14,2,3);}
+}
+function drawBossSpr(b,cx,cy){
+  if(b.state==='gone')return;
+  const fr=SPR.boss[(b.state==='walk'&&(b.st>>3)&1)?1:0][b.hp<=3?1:0];
+  const flash=(b.inv>0&&(G.t>>2)&1)||(b.state==='dying'&&(G.t>>1)&1);
+  let ox=0;if(b.state==='crouch'||b.state==='intro')ox=(G.t&2)?1:-1;
+  const sy=b.state==='crouch'?2:0;
+  ctx.drawImage(flash?fr.w:fr.n,Math.round(b.x+b.w/2-16-cx+ox),Math.round(b.y+b.h-32-cy+sy));
+  if(b.state==='aim'&&b.st<36){ctx.fillStyle='rgba(255,80,60,'+(b.st/36*.5)+')';ctx.fillRect(Math.round(b.x+b.w/2-cx)-3,Math.round(b.y-cy)+8,6,6);}
+}
+function drawHUD(){
+  ctx.fillStyle='rgba(13,10,20,.42)';ctx.fillRect(0,0,VW,24);
+  const lab='#b8ad96';
+  text('SCORE',8,3,lab);text(pad(G.score,7),8,13,'#ffffff');
+  ctx.drawImage(COIN[0],62,9,12,12);text('X'+pad(G.coins,2),76,13,'#ffffff');
+  text('MONDE',124,3,lab);text(lvlName(G.lvl),130,13,'#ffffff');
+  text('TEMPS',178,3,lab);text(pad(G.time,3),184,13,G.time<=60&&(G.t>>4)&1?'#ff6a5a':'#ffffff');
+  text('VIES',230,3,lab);text('♥',230,13,'#ff6a7a');text('X'+G.lives,238,13,'#ffffff');
+  if(L.boss&&L.arenaLocked&&L.boss.state!=='gone'){
+    const b=L.boss,w=120,x=(VW-w)>>1,y=30;text('FERROC',x,y,'#ff9a4a');R(ctx,'#140c1c',x+40,y,w-40,7);R(ctx,'#4a1810',x+41,y+1,w-42,5);R(ctx,b.hp<=3?'#ff3a2a':'#ff9a4a',x+41,y+1,Math.round((w-42)*b.hp/b.maxhp),5);
+  }
+}
+function renderPlay(){
+  const th=L.th;
+  const sx=G.shake?((Math.random()*4)|0)-2:0,sy=G.shake?((Math.random()*4)|0)-2:0;
+  const cx=Math.round(cam.x)+sx,cy=Math.round(cam.y)+sy;
+  drawBG(th,cam.x,cam.y,G.t);
+  for(const it of L.items)if(it.kind==='seed'&&it.rise>0)ctx.drawImage(SEED,Math.round(it.x-2-cx),Math.round(it.y-2-cy));
+  drawTiles(cx,cy);
+  for(const c of L.cps)drawCheckpoint(c,cx,cy);
+  if(L.portal)drawPortal(L.portal,cx,cy);
+  for(const it of L.items){
+    if(it.kind==='coinpop')ctx.drawImage(COIN[(G.t>>2)&3],Math.round(it.x-cx),Math.round(it.y-cy));
+    else if(!it.rise){ctx.drawImage(SEED,Math.round(it.x-2-cx),Math.round(it.y-2-cy+Math.sin(G.t*.2)));}
+  }
+  for(const e of L.ents)if(e.active)drawEnemy(e,cx,cy);
+  if(L.boss)drawBossSpr(L.boss,cx,cy);
+  drawPlayer(cx,cy);
+  for(const p of L.proj){
+    const x=Math.round(p.x-cx),y=Math.round(p.y-cy);
+    if(p.kind==='seed'){R(ctx,'#3a2410',x,y,6,6);R(ctx,'#c8a060',x+1,y+1,4,4);R(ctx,'#f4e0a0',x+1,y+1,2,1);}
+    else if(p.kind==='bolt'){R(ctx,'#5a0a3a',x,y,8,8);R(ctx,(G.t>>1)&1?'#ff7ad0':'#ffb0e8',x+1,y+1,6,6);R(ctx,'#ffffff',x+3,y+3,2,2);}
+    else{R(ctx,'#ff8a2a',x,y+3,10,7);R(ctx,'#ffd060',x+2,y+((G.t>>1)&1),6,7);R(ctx,'#fff3b0',x+4,y+5,2,3);}
+  }
+  for(const p of L.parts){ctx.fillStyle=p.col;ctx.fillRect(Math.round(p.x-cx),Math.round(p.y-cy),p.size,p.size);}
+  for(const t of L.texts){const s=t.big?1:1;const x=Math.round(t.x-cx),y=Math.round(t.y-cy);if(t.big)ctext(t.s,y,t.col||'#ffffff',1);else text(t.s,x,y,t.col||'#ffffff',s);}
+  drawHUD();
+}
+function renderPause(){
+  ctx.fillStyle='rgba(8,6,14,.72)';ctx.fillRect(0,0,VW,VH);
+  outlined('PAUSE',(VW-textW('PAUSE',3))/2,34,'#ffcf4a',3,'#140c1c');
+  ctext('MONDE '+lvlName(G.lvl)+' · '+L.th.name,64,'#b8ad96');
+  menuDraw(G.menu,88,16);
+}
+function renderTitle(){
+  const th=THEMES[0],t=G.t;const camx=t*.7;
+  drawBG(th,camx,0,t);
+  // sol défilant
+  const gx=-Math.floor(camx%16);for(let x=gx;x<VW;x+=16){ctx.drawImage(th.T.gt,x,VH-24);ctx.drawImage(th.T.g,x,VH-8);}
+  // héros qui court, poursuivi par un peluchon
+  const hf=[SPR.hs.run1,SPR.hs.idle,SPR.hs.run2,SPR.hs.idle][(t>>3)&3];ctx.drawImage(hf[0],70,VH-40);
+  const wf=(t>>3)&1?SPR.walk.a:SPR.walk.b;ctx.drawImage(wf[0],22+Math.round(Math.sin(t*.03)*6),VH-40);
+  const ff=(t>>2)&1?SPR.fly.a:SPR.fly.b;ctx.drawImage(ff[0],320,VH-110+Math.round(Math.sin(t*.05)*10));
+  // logo
+  ctx.fillStyle='rgba(13,10,20,.35)';ctx.fillRect(0,12,VW,58);
+  const title='BRINDILLE',s=4,tw=textW(title,s),tx=(VW-tw)>>1,ty=18;
+  outlined(title,tx,ty,'#ffcf4a',s,'#2a1430');
+  ctx.save();ctx.beginPath();ctx.rect(0,ty+16,VW,20);ctx.clip();drawStr(title,tx,ty,'#f0782a',s);ctx.restore();
+  ctx.drawImage(SPR.hs.idle[0],tx-22,ty+10);
+  ctext('ET LES QUATRE ROYAUMES',ty+38,'#f4ead2',1);
+  menuDraw(G.menu,82,15);
+  ctext('MEILLEUR SCORE '+pad(save.hiscore,7),VH-12,'#ffffff',1);
+}
+function renderSelect(){
+  ctx.fillStyle='#120e1c';ctx.fillRect(0,0,VW,VH);
+  outlined('CHOIX DU NIVEAU',(VW-textW('CHOIX DU NIVEAU',2))/2,10,'#ffcf4a',2,'#2a1430');
+  G.selRects=[];
+  for(let w=0;w<4;w++){
+    const y=40+w*36,th=THEMES[w];
+    ctx.drawImage(th.bg.sky,0,y*0,VW,VH,8,y-4,140,28);
+    text(th.name,14,y+6,th.ui);
+    for(let l=0;l<3;l++){
+      const i=w*3+l,x=164+l*72,open=i<=save.unlocked,sel=G.sel===i;
+      ctx.fillStyle=sel?'#ffcf4a':(open?'#3a2f52':'#221c30');ctx.fillRect(x,y-4,62,26);
+      ctx.fillStyle=sel?'#2a1430':(open?'#251d38':'#18131f');ctx.fillRect(x+2,y-2,58,22);
+      if(open)text(lvlName(i),x+22,y+5,sel?'#ffcf4a':'#f4ead2');
+      else{R(ctx,'#5a5070',x+26,y+2,10,8);R(ctx,'#18131f',x+28,y+4,6,4);R(ctx,'#8a80a0',x+24,y+8,14,9);R(ctx,'#3a3050',x+30,y+11,2,3);}
+      G.selRects.push({x,y:y-4,w:62,h:26,i});
+    }
+  }
+  const sel=G.sel===12,bw=textW('RETOUR')+24,bx=(VW-bw)>>1,by=188;
+  ctx.fillStyle=sel?'#ffcf4a':'#3a2f52';ctx.fillRect(bx,by,bw,16);ctx.fillStyle=sel?'#2a1430':'#251d38';ctx.fillRect(bx+2,by+2,bw-4,12);
+  text('RETOUR',bx+12,by+5,sel?'#ffcf4a':'#f4ead2');G.selRects.push({x:bx,y:by,w:bw,h:16,i:12});
+}
+function renderIntro(){
+  const th=THEMES[LEVELS[G.lvl].w];
+  ctx.fillStyle='#0d0a14';ctx.fillRect(0,0,VW,VH);
+  ctx.globalAlpha=.35;ctx.drawImage(th.bg.sky,0,0);ctx.globalAlpha=1;
+  ctext(th.name,46,th.ui,1);
+  outlined('MONDE '+lvlName(G.lvl),(VW-textW('MONDE '+lvlName(G.lvl),3))/2,62,'#ffffff',3,'#140c1c');
+  ctx.drawImage((G.big?SPR.hb:SPR.hs).idle[0],VW/2-34,(G.big?112:120));
+  text('X '+G.lives,VW/2-10,126,'#ffffff',2);
+  ctext(WORLD_TIPS[G.lvl],166,'#b8ad96',1);
+  if(G.st>25&&(G.st>>4)&1)ctext('APPUIE POUR COMMENCER',190,'#ffcf4a',1);
+}
+function renderGameOver(){
+  ctx.fillStyle='#0d0a14';ctx.fillRect(0,0,VW,VH);
+  outlined('PARTIE TERMINÉE',(VW-textW('PARTIE TERMINÉE',3))/2,70,'#ff6a5a',3,'#2a0c14');
+  ctext('SCORE '+pad(G.score,7),112,'#ffffff');
+  ctext('MEILLEUR SCORE '+pad(save.hiscore,7),128,'#ffcf4a');
+  ctext('TU REPRENDRAS AU DÉBUT DU MONDE '+(Math.floor(G.lvl/3)+1),156,'#b8ad96');
+}
+function renderEnding(){
+  const th=THEMES[2];drawBG(th,G.t*.5,0,G.t);
+  ctx.fillStyle='rgba(13,10,20,.45)';ctx.fillRect(0,0,VW,VH);
+  outlined('VICTOIRE !',(VW-textW('VICTOIRE !',4))/2,24,'#ffcf4a',4,'#2a1430');
+  const lines=['FERROC EST VAINCU.','LES GRAINES D\'AUBE QU\'IL AVAIT VOLÉES','REFLEURISSENT SUR LES QUATRE ROYAUMES.','','SCORE FINAL '+pad(G.score,7),'MEILLEUR SCORE '+pad(save.hiscore,7)];
+  lines.forEach((l,i)=>ctext(l,74+i*13,i>=4?'#ffcf4a':'#f4ead2'));
+  ctx.drawImage(SPR.hb.idle[0],VW/2-8,VH-48+Math.round(Math.sin(G.t*.1)*2));
+  if(G.st>120&&(G.st>>4)&1)ctext("MERCI D'AVOIR JOUÉ ! APPUIE POUR CONTINUER",VH-14,'#bcd4ff');
+}
+
+// =====================================================================
+//  NIVEAUX (générés par tools/levelgen.py)
+// =====================================================================
+// LEVELS-BEGIN
+const LEVELS=[
+{w:0,time:272,map:[
+"....................................................................................................................................",
+"....................................................................................................................................",
+"....................................................................................................................................",
+"....................................................................................................................................",
+"....................................................................................................................................",
+"..................?..........oooooo.............................................................?...................................",
+"....................................................................................................................................",
+"...................................................................................................................SS...............",
+"..................................................................................................................SSS...............",
+"..............B?BPB.........BBBMBB?B.........ooo...................oooooo.........ooo.......B?BPB................SSSS...............",
+"................................................................................................................SSSSS...............",
+"...............................................................................................................SSSSSS...............",
+".@....................w..................................C..........................................w.........SSSSSSS......X........",
+"#############################################...##################################...###############################################",
+"#############################################...##################################...###############################################",
+]},
+{w:0,time:284,map:[
+".......................................................................................................................................................",
+".......................................................................................................................................................",
+".......................................................................................................................................................",
+".......................................................................................................................................................",
+".......................................................................................................................................................",
+"..................?..................................................................?.................................................................",
+".......................................................................................................................................................",
+".....................................................................................................o................................SS...............",
+".....................................................................................................S...............................SSS...............",
+"..............B?BPB..........S........S.......?...?....................ooo.......B?BPB..............SS...........oooooo.............SSSS...............",
+"............................SS...oo...SS...........................................................SSS.............................SSSSS...............",
+"...........................SSS........SSS.........................................................SSSS............................SSSSSS...............",
+".@....................w...SSSS...w....SSSS...w......w.......C............................w.......SSSSS..w.w......................SSSSSSS......X........",
+"#######################################################################...#############################################################################",
+"#######################################################################...#############################################################################",
+]},
+{w:0,time:296,map:[
+".................................................................................................................................................................................",
+".................................................................................................................................................................................",
+".................................................................................................................................................................................",
+".................................................................................................................................................................................",
+".................................................................................................................................................................................",
+"..........................................................................................oooooo.................................................................................",
+".................................................................................................................................................................................",
+"......................f....................................................................................................o....................................SS...............",
+"..................................oooooo...................................................................................S...................................SSS...............",
+"................oooo............................P...?.........o.....o....o...............BBBMBB?B........oooooo...........SS.............B?B..................SSSS...............",
+"..................................======.................................................................................SSS.................................SSSSS...............",
+"........................................................................................................................SSSS................................SSSSSS...............",
+".@................................^^^^^^..w....w......w..........................C.....................................SSSSS....w....o.o.o..w..S..t........SSSSSSS......X........",
+"##################...########################################...###...##...######################################################################################################",
+"##################...########################################...###...##...######################################################################################################",
+]},
+{w:1,time:296,map:[
+"########################################################################################################################################################################################",
+"########################################################################################################################################################################################",
+"........................................................................................................................................................................................",
+"........................................................................................................................................................................................",
+"........................................................................................................................................................................................",
+".......................................................ooo..............................................................................................................................",
+"........................................................................................................................................................................................",
+"...........................................................................o........................................................................f..................SS...............",
+"......................................................=====................S..........................................................................................SSS...............",
+"................o.....o....o.........BPB..................................SS.......................B?B.............?...?..........ooo.........oooo...................SSSS...............",
+".........................................................................SSS........................................................................................SSSSS...............",
+".................................................====.......====........SSSS.......................................................................................SSSSSS...............",
+".@...............................j.........j...........................SSSSS....w......C.......o.o.o.....S..t.....w..w...w.w........................w.............SSSSSSS......X........",
+"###############...###...##...####################..............###################################################################...###########...#####################################",
+"###############...###...##...####################..............###################################################################...###########...#####################################",
+]},
+{w:1,time:308,map:[
+"########################################################################################################################################################################################################",
+"########################################################################################################################################################################################################",
+"........................................................................................................................................................................................................",
+"........................................................................................................................................................................................................",
+"........................................................................................................................................................................................................",
+"....................ooo.........................................................................ooo............................................oooooo...................................................",
+"........................................................................................................................................................................................................",
+"..........................................f.........................................................................o...............................................f..................SS...............",
+"...................=====..............................oooooo...................................=====................S.................................................................SSS...............",
+"....................................oooo............................P...?..........................................SS.............B?B.........BBBMBB?B........oooo...................SSSS...............",
+"......................................................======......................................................SSS...............................................................SSSSS...............",
+"..............====.......====.............................................................====.......====........SSSS..............................................................SSSSSS...............",
+".@.................................e..................^^^^^^.....w.w....e.w.w.....C.............................SSSSS....w....j.........j...........................w.............SSSSSSS......X........",
+"##############..............##########...#################################################..............########################################################...#####################################",
+"##############..............##########...#################################################..............########################################################...#####################################",
+]},
+{w:1,time:320,map:[
+"#######################################################################################################################################################################################################################################",
+"#######################################################################################################################################################################################################################################",
+".......................................................................................................................................................................................................................................",
+".......................................................................................................................................................................................................................................",
+".......................................................................................................................................................................................................................................",
+"....................f........................................................ooo.......................................................................................................................................................",
+"...............................................................f....................................................................f..................................................................................................",
+"........................................o..........................................................f..................................................................................................................SS...............",
+"................ooo...ooo...............S..................SS...............=====...............................................SS...............................................................ooo.................SSS...............",
+".......................................SS..............SS..SS................................oooo...........................SS..SS..........BBBBMBBBBBB........ooo...........B?B....................................SSSS...............",
+"................SS...SS...SS..........SSS..........SS..SS..SS..SS.......................................................SS..SS..SS..SS...................................................S.........................SSSSS...............",
+".....................................SSSS..........SS..SS..SS..SS......====.......====..................................SS..SS..SS..SS.......o.o.o.o.o..................................SS........................SSSSSS...............",
+".@..................................SSSSS.e..w.....SS..SS..SS..SS.....................w........................C........SS..SS..SS..SS..........e.............e...w......j.w.......j...SSS..........e..e.........SSSSSSS......X........",
+"##############................####################.SS..SS..SS..SS..####..............##########...#####################.SS..SS..SS..SS..#######################...########################.....########################################",
+"##############................####################.SS..SS..SS..SS..####..............##########...#####################.SS..SS..SS..SS..#######################...########################.....########################################",
+]},
+{w:2,time:308,map:[
+"..............................................................................................................................................................................................................",
+"..............................................................................................................................................................................................................",
+"..............................................................................................................................................................................................................",
+"..............................................................................................................................................................................................................",
+"..............................................................................................................................................................................................................",
+"....................................................................................................................................ooo.......................................................................",
+"..............................................................................................................................................................................................................",
+"......................................................f.............................................................f.....................................................o..................SS...............",
+"...................................................................................................................................=====..................................S.................SSS...............",
+"..................BPB..........S........S.......oooo................B?B.........................B?B...........oooo....................................B?B................SS................SSSS...............",
+"..............................SS...oo...SS..............................................................................................................................SSS...............SSSSS...............",
+".............................SSS........SSS...................................................................................====.......====..........................SSSS..............SSSSSS...............",
+".@............j......w..j...SSSS...e..w.SSSS.w...........k......o.o.o.w...S..t......C.......j......e..j...........................................o.o.o.....S..t......SSSSS..w.e........SSSSSSS......X........",
+"##################################################...###########################################################...###########..............##################################################################",
+"##################################################...###########################################################...###########..............##################################################################",
+]},
+{w:2,time:320,map:[
+"....................................................................................................................................................................................................................................",
+"....................................................................................................................................................................................................................................",
+"....................................................................................................................................................................................................................................",
+"....................................................................................................................................................................................................................................",
+"....................................................................................................................................................................................................................................",
+".........................................................................ooo........................................................................................................................................................",
+"....................................................................................................f............................................f..................................................................................",
+"...................................................................................................................................................................................................................SS...............",
+"......................t.................................................=====...................SS...........................................SS...................................................................SSS...............",
+".....................SS.........o.....o....o.........BPB....................................SS..SS......................?...?............SS..SS............oooooo.......S........S.......o.....o....o............SSSS...............",
+"....................SSS.................................................................SS..SS..SS..SS...............................SS..SS..SS..SS....................SS...oo...SS.............................SSSSS...............",
+"...................SSSS............................................====.......====......SS..SS..SS..SS...............................SS..SS..SS..SS...................SSS........SSS...........................SSSSSS...............",
+".@.............e..SSSSS.e..........k.............o.o.o.....S..t.........................SS..SS..SS..SS..k.....C........k....w.e......SS..SS..SS..SS......e.e..e......SSSS.e.e....SSSS........w................SSSSSSS......X........",
+"###############################...###...##...######################..............######.SS..SS..SS..SS..############################.SS..SS..SS..SS..###################################...###...##...##############################",
+"###############################...###...##...######################..............######.SS..SS..SS..SS..############################.SS..SS..SS..SS..###################################...###...##...##############################",
+]},
+{w:2,time:332,map:[
+"........................................................................................................................................................................................................................................................",
+"........................................................................................................................................................................................................................................................",
+"........................................................................................................................................................................................................................................................",
+"........................................................................................................................................................................................................................................................",
+"........................................................................................................................................................................................................................................................",
+"....................f.................................................................ooo...............................................................................................................................................................",
+"...........................................................................................................................f..........................................................................................f.................................",
+".......................................................................................................................................................................................................................................SS...............",
+"................ooo...ooo...............................................t............=====.............................SS....................................ooo..................................................SS..................SSS...............",
+"....................................P...?...........B?BB...............SS..........................................SS..SS..............B?B...................................B?BB............B?B..............SS..SS.................SSSS...............",
+"................SS...SS...SS..........................................SSS......................................SS..SS..SS..SS........................S....................................................SS..SS..SS..SS............SSSSS...............",
+".....................................................................SSSS.......====.......====................SS..SS..SS..SS.......................SS....................................................SS..SS..SS..SS...........SSSSSS...............",
+".@...............................e.w......e.....k..e....k...k....w..SSSSS..w...................e......C........SS..SS..SS..SS......o.o.o.....S..t..SSS......e.w....w.....k..w..w.k.......j.k.......j......SS..SS..SS..SS..........SSSSSSS......X........",
+"##############................##################################################..............################.SS..SS..SS..SS..#######################.....##############################################.SS..SS..SS..SS..##############################",
+"##############................##################################################..............################.SS..SS..SS..SS..#######################.....##############################################.SS..SS..SS..SS..##############################",
+]},
+{w:3,time:320,map:[
+"#########################################################################################################################################################################################################################",
+"#########################################################################################################################################################################################################################",
+".........................................................................................................................................................................................................................",
+".........................................................................................................................................................................................................................",
+".........................................................................................................................................................................................................................",
+"....................................................?.........................................................?...............ooo.................................................oooooo.................................",
+".........................................................................................................................................................f...............................................................",
+"........................................................................................................................................................................................................SS...............",
+"..............ooo...ooo.................t....................................................................................=====...................SS................................................SSS...............",
+".......................................SS.......B?BPB..........S........S.........B?B.....................B?BPB..................................SS..SS..............B?BB........BBBMBB?B.............SSSS...............",
+"..............===...===...............SSS.....................SS...oo...SS...................................................................SS..SS..SS..SS..........................................SSSSS...............",
+".....................................SSSS....................SSS........SSS.............................................====.......====......SS..SS..SS..SS.........................................SSSSSS...............",
+".@............^^^^^^^^^^^^..t..k.k..SSSSS.k.e.........k.k...SSSS...k....SSSS..o.o.o.....S..t......C........k....k.e....k.....................SS..SS..SS..SS......k.......k.e....e...k....k.........SSSSSSS......X........",
+"########################################################################################################################..............######.SS..SS..SS..SS..############################################################",
+"########################################################################################################################~~~~~~~~~~~~~~######~SS~~SS~~SS~~SS~~############################################################",
+]},
+{w:3,time:332,map:[
+"##############################################################################################################################################################################################################################################################",
+"##############################################################################################################################################################################################################################################################",
+"..............................................................................................................................................................................................................................................................",
+"..............................................................................................................................................................................................................................................................",
+"..............................................................................................................................................................................................................................................................",
+"..................................................................................................................................................?...............................................ooo.........................................................",
+"......................................f.........f.............................................................f...............................................................................................................................................",
+"........................t.........................................t..........................................................................................................................................................................SS...............",
+".......................SSS.......................................SSS......................................SS........................................................t............................=====..................ooo.................SSS...............",
+".........................................P.....................................o...o...o..............SS..SS......................oooooo......B?BPB................SS...........B?BB.......................................................SSSS...............",
+"..................===.......................................===...................................SS..SS..SS..SS..................................................SSS...........................................S.........................SSSSS...............",
+"..............................................................................S...S...S...S.......SS..SS..SS..SS.................................................SSSS.......................====.......====....SS........................SSSSSS...............",
+".@.............k.......k.k.........j.......e.j.........k.k......e..k.e.....k..S...S...S...S.....e.SS..SS..SS..SS........C.............k..........e....e......k..SSSSS..k....k..e....k......................e..SSS........k....e.........SSSSSSS......X........",
+"#################..####################...#####...#########..###############..S...S...S...S..####.SS..SS..SS..SS..##########################################################################..............#######.....########################################",
+"#################~~####################~~~#####~~~#########~~###############~~S~~~S~~~S~~~S~~####~SS~~SS~~SS~~SS~~##########################################################################~~~~~~~~~~~~~~#######~~~~~########################################",
+]},
+{w:3,time:396,map:[
+"####################################################################################################################################################################################SSSSSSSSSSSSSSSSSSSSSSSSSS",
+"####################################################################################################################################################################################SSSSSSSSSSSSSSSSSSSSSSSSSS",
+".............................................................................................................................................................................................................S",
+".............................................................................................................................................................................................................S",
+".............................................................................................................................................................................................................S",
+"....................................f...........................................................................f............................................................................................S",
+"......................................................f.........f.................................................................f.........f................................................................S",
+".............................................................................................................................................................................................................S",
+"................................ooo...ooo.......................................t.......ooo...ooo...........ooo...ooo.......................................t...........................===..........===.....S",
+"..................BPBB...................................?.....................SS....................................................?.....................SS................................................S",
+"................................SS...SS...SS..................................SSS.......===...===...........SS...SS...SS..................................SSS................................................S",
+".............................................................................SSSS........................................................................SSSS................................................S",
+".@............k.......k...k..k................e..k.j.k.....k.j.....e...e.k..SSSSS..k....^^^^^^^^^^^^..t..k.....................j.e....k..j....k......e..SSSSS...e.....C.............A....................Z...S",
+"##############################................#########...#####...########################################................#########...#####...######################################SSSSSSSSSSSSSSSSSSSSSSSSSS",
+"##############################~~~~~~~~~~~~~~~~#########~~~#####~~~########################################~~~~~~~~~~~~~~~~#########~~~#####~~~######################################SSSSSSSSSSSSSSSSSSSSSSSSSS",
+]},
+];
+// LEVELS-END
+
+// =====================================================================
+//  BOUCLE PRINCIPALE À PAS FIXE (60 Hz)
+// =====================================================================
+buildSprites();buildThemes();
+G.menu=titleMenu();AU.play('title');
+if(('ontouchstart' in window)||navigator.maxTouchPoints>0){if(window.matchMedia&&matchMedia('(pointer:coarse)').matches)touchMode();}
+let acc=0,last=performance.now();
+function frame(now){
+  let dt=now-last;last=now;if(dt>250)dt=250;acc+=dt;let n=0;
+  while(acc>=STEP&&n<6){update();acc-=STEP;n++;}
+  if(n>=6)acc=0;
+  render();requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+cvs.focus();
+window.__brindille={G,get L(){return L;},get P(){return P;},cam,save,loadLevel,LEVELS};
+})();
+</script>
+</body>
+</html>
