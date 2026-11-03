@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Brindille et les Quatre Royaumes</title>
+<title>Super Maël Bros</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0d0a14">
 <meta name="mobile-web-app-capable" content="yes">
@@ -40,7 +40,7 @@ body.touch #touch{display:block}
 </style>
 </head>
 <body>
-<div id="wrap"><canvas id="game" width="384" height="216" tabindex="0" aria-label="Brindille et les Quatre Royaumes, jeu de plateforme"></canvas></div>
+<div id="wrap"><canvas id="game" width="384" height="216" tabindex="0" aria-label="Super Maël Bros, jeu de plateforme"></canvas></div>
 <div id="touch" aria-hidden="true">
   <div id="dpad"><span class="arm up"></span><span class="arm down"></span><span class="arm left"></span><span class="arm right"></span></div>
   <div id="bB" class="btn"><b>B</b><i>COURSE</i></div>
@@ -53,7 +53,7 @@ body.touch #touch{display:block}
 (function(){
 'use strict';
 // =====================================================================
-//  BRINDILLE ET LES QUATRE ROYAUMES
+//  SUPER MAËL BROS
 //  Jeu de plateforme original. Tout (graphismes, sons, niveaux) est
 //  généré par ce fichier, sans aucune ressource externe.
 // =====================================================================
@@ -142,52 +142,52 @@ function outlined(str,x,y,col,s,oc){str=String(str).toUpperCase();for(const[dx,d
 //  SPRITES (pixel art dessiné par code)
 // =====================================================================
 const HS_TOP=[
-"....gg....gg....",
-"...gGGg..gGGg...",
-"....gGGggGGg....",
-"......kGGk......",
-".....kkkkkk.....",
-"...kkbbbbbbkk...",
-"..kbbbbbbbbbbk..",
-"..kbbbbbwwbwwk..",
-"..kbbbbbwebwek..",
-"..kbbbbbwebwek..",
-"..kdbbbbbbbbdk..",
-"..kRrrrrrrrrRk..",
-"rRkdddbbbbdddk..",
-"...kddddddddk..."];
-const HS_DEAD=HS_TOP.slice();HS_DEAD[7]="..kbbbbkbkbkbk..";HS_DEAD[8]="..kbbbbbkbbkbk..";HS_DEAD[9]="..kbbbbkbkbkbk..";
+"....h.hh..h.....",
+"...hhhhhhhhh....",
+"..hhHhhhhhhhh...",
+"..hhhhhhhhhhhh..",
+"..hhhhhhhhhhhh..",
+"..hhhsshsshshk..",
+"..hhssesssessk..",
+"..khsssssssssk..",
+"...ksswwwwwsk...",
+"....kssssssk....",
+"..ooottttooo....",
+".tOootttttooOt..",
+".tObbbbbbbbbOt..",
+".sOoooooooooOs.."];
+const HS_DEAD=HS_TOP.slice();HS_DEAD[6]="..hhskssskssk...";HS_DEAD[8]="...ksssSSssk....";
 const HS_LEGS={
-idle:["....kffk.kffk...","...kkkk..kkkk..."],
-run1:["...kffk...kffk..","..kkkk.....kkkk."],
-run2:[".....kfffk......",".....kkkkk......"],
-jump:["..kffk....kffk..","..kk........kk.."]};
+idle:["...nnnnnuuuu....","....ss....ss...."],
+run1:["..nnnnnuuuu.....","..ss.......ss..."],
+run2:["....nnnnuuuu....",".....ssss......."],
+jump:["...nnnnnuuuu....","..ss......ss...."]};
 const HB_TOP=[
-"......pPp.......",
-".....pPyPp......",
-"......pPp.......",
-"...gg..G..gg....",
-"..gGGg.G.gGGg...",
-"...gGGgGgGGg....",
-".......G........",
-".....kkkkkk.....",
-"...kkbbbbbbkk...",
-"..kbbbbbbbbbbk..",
-"..kbbbbbwwbwwk..",
-"..kbbbbbwebwek..",
-"..kbbbbbwebwek..",
-"..kdbbbbbbbbdk..",
-"..kdbbbbbbbbdk..",
-"..kRrrrrrrrrRk..",
-"rRkRrdbbbbbddk..",
-"r.kddbbbbbbddk..",
-"..kdddbbbbdddk..",
-"...kddddddddk..."];
+"....h.hh..h.....",
+"...hhhhhhhhh....",
+"..hhHhhhhhhhh...",
+"..hhhhhhhhhhhh..",
+"..hhhhhhhhhhhh..",
+"..hhhsshsshshk..",
+"..hhssesssessk..",
+"..khsssssssssk..",
+"...ksswwwwwsk...",
+"....kssssssk....",
+"..ooottttooo....",
+".tOoottttdooOt..",
+".tOootttttooOt..",
+".dOoottdttooOd..",
+".tObbbbbbbbbOt..",
+".tOoootttoooOt..",
+".sOoootttoooOs..",
+"..OoootttoooO...",
+"...nnnnnuuuu....",
+"...nnnnnuuuu...."];
 const HB_LEGS={
-idle:["....kdk..kdk....","....kfk..kfk....","....kffk.kffk...","...kkkk..kkkk..."],
-run1:["...kdk....kdk...","..kfk......kfk..","..kffk.....kffk.","..kkkk.....kkkk."],
-run2:[".....kdkkdk.....",".....kfkkfk.....",".....kffffk.....",".....kkkkkk....."],
-jump:["...kdk...kdk....","..kffk...kffk...","..kkk.....kkk...","................"]};
+idle:["...nnnn.uuuu....","....ss...ss.....","....ss...ss.....","...sss..sss....."],
+run1:["..nnnn...uuuu...","..ss.......ss...",".ss.........ss..",".sss........sss."],
+run2:["....nnnnuuuu....",".....ssss.......",".....ssss.......","....sssss......."],
+jump:["..nnnn..uuuu....","..ss......ss....","..sss.....sss...","................"]};
 const WALK_TOP=[
 "................",
 "......m..m......",
@@ -281,7 +281,7 @@ const SPIKY=[
 const SPR={};
 let COIN=[],SEED=null;
 function buildSprites(){
-  const HP={k:'#2a1a12',b:'#f6d595',d:'#d49a58',g:'#86e264',G:'#2f9a44',r:'#ee4a3c',R:'#a82a35',w:'#ffffff',e:'#1e1228',f:'#6a4224',p:'#ff9cc8',P:'#e0507f',y:'#ffe066'};
+  const HP={k:'#2a1a12',h:'#4a2e1c',H:'#7a5236',s:'#e4aa7c',S:'#b87a52',e:'#1e1228',w:'#ffffff',o:'#f25a1e',O:'#b03a12',t:'#f4f4f0',d:'#1e1e24',b:'#2a2a34',n:'#f07a2a',u:'#3a9ad8'};
   SPR.hs={};for(const k in HS_LEGS)SPR.hs[k]=pairR(fromMap(HS_TOP.concat(HS_LEGS[k]),HP));
   SPR.hs.dead=pairR(fromMap(HS_DEAD.concat(HS_LEGS.jump),HP));
   SPR.hb={};for(const k in HB_LEGS)SPR.hb[k]=pairR(fromMap(HB_TOP.concat(HB_LEGS[k]),HP));
@@ -1196,12 +1196,13 @@ function renderTitle(){
   const wf=(t>>3)&1?SPR.walk.a:SPR.walk.b;ctx.drawImage(wf[0],22+Math.round(Math.sin(t*.03)*6),VH-40);
   const ff=(t>>2)&1?SPR.fly.a:SPR.fly.b;ctx.drawImage(ff[0],320,VH-110+Math.round(Math.sin(t*.05)*10));
   // logo
-  ctx.fillStyle='rgba(13,10,20,.35)';ctx.fillRect(0,12,VW,58);
-  const title='BRINDILLE',s=4,tw=textW(title,s),tx=(VW-tw)>>1,ty=18;
+  ctx.fillStyle='rgba(13,10,20,.35)';ctx.fillRect(0,4,VW,72);
+  outlined('SUPER',(VW-textW('SUPER',2))>>1,8,'#ffffff',2,'#2a1430');
+  const title='MAËL BROS',s=4,tw=textW(title,s),tx=(VW-tw)>>1,ty=32;
   outlined(title,tx,ty,'#ffcf4a',s,'#2a1430');
   ctx.save();ctx.beginPath();ctx.rect(0,ty+16,VW,20);ctx.clip();drawStr(title,tx,ty,'#f0782a',s);ctx.restore();
   ctx.drawImage(SPR.hs.idle[0],tx-22,ty+10);
-  ctext('ET LES QUATRE ROYAUMES',ty+38,'#f4ead2',1);
+  ctext('ET LES QUATRE ROYAUMES',ty+36,'#f4ead2',1);
   menuDraw(G.menu,82,15);
   ctext('MEILLEUR SCORE '+pad(save.hiscore,7),VH-12,'#ffffff',1);
 }
@@ -1481,7 +1482,7 @@ function frame(now){
 }
 requestAnimationFrame(frame);
 cvs.focus();
-window.__brindille={G,get L(){return L;},get P(){return P;},cam,save,loadLevel,LEVELS};
+window.__mael={G,get L(){return L;},get P(){return P;},cam,save,loadLevel,LEVELS};
 })();
 </script>
 </body>

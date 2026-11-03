@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Génère les 12 niveaux de Brindille sous forme de tableaux de tuiles.
+"""Génère les 12 niveaux de Super Maël Bros sous forme de tableaux de tuiles.
 
 Chaque niveau est assemblé à partir de tronçons dessinés à la main
 (alignés sur le bas, 15 lignes de haut), puis injecté dans index.html

@@ -1,6 +1,6 @@
-# Brindille et les Quatre Royaumes
+# Super Maël Bros
 
-Jeu de plateforme 2D original, contenu dans un seul fichier : `index.html` (canvas + JavaScript, aucune dépendance).
+Jeu de plateforme 2D, contenu dans un seul fichier : `index.html` (canvas + JavaScript, aucune dépendance).
 Ouvre-le dans un navigateur, sur ordinateur ou sur mobile.
 
 - 4 mondes de 3 niveaux : Prairies de l'Aube, Grottes Chantantes, Bois de Lune, Citadelle de Ferroc (boss).
